@@ -3,7 +3,7 @@ export const portalUrl = import.meta.env.PUBLIC_PORTAL_URL ?? "http://127.0.0.1:
 export const faqs: { question: string; answer: string; open?: boolean }[] = [
   {
     question: "How do I book?",
-    answer: "Choose a published doctor and a date, then open one of the free times. Sign in to confirm it. A time on this page is not held until that confirmation.",
+    answer: "Choose a doctor and date, then select an available time. Sign in to confirm it. The time is not held until your booking is confirmed.",
     open: true,
   },
   {

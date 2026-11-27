@@ -1,0 +1,22 @@
+---
+import PatientPage from "../layouts/PatientPage.astro";
+import { loadCatalog } from "../lib/catalog";
+import { portalUrl } from "../data/clinic";
+const { clinic } = await loadCatalog();
+---
+<PatientPage {clinic} label="Patient guide" title="Your appointment guide" description="From packing your glasses to arranging a follow-up, here’s what to have ready at each stage of a clinic visit.">
+  <div class="section wrap reading-grid">
+    <article class="guide-copy">
+      <section id="before"><p class="eyebrow">01 / Before you leave</p><h2>Bring the essentials</h2>
+        <ul><li>Your appointment reference and the name of the doctor you booked.</li><li>The glasses you usually wear and any previous eye prescriptions or reports.</li><li>A list of medicines and eye drops you use, including their names if you know them.</li></ul>
+        <p>If you need help with access or getting to reception, check with the clinic before travelling.</p></section>
+      <section id="during"><p class="eyebrow">02 / At the clinic</p><h2>Make time for your questions</h2>
+        <p>Give reception your booking reference. During the consultation, tell the doctor what brought you in, when you first noticed the problem and how it affects daily activities such as reading.</p>
+        <p>Before leaving, ask what your findings mean, whether you need a follow-up and whom to contact if you have questions later.</p></section>
+      <section id="after"><p class="eyebrow">03 / After your visit</p><h2>Keep your visit details together</h2>
+        <p>Keep any written instructions with your prescription and reports. If the doctor recommends another visit, note the suggested date and check availability with that doctor.</p>
+        <a class="text-link" href={`${portalUrl}/sign-in`}>Manage my appointments →</a></section>
+    </article>
+    <aside class="reading-note"><h2>On this page</h2><nav aria-label="Guide sections"><a href="#before">Before you leave</a><a href="#during">At the clinic</a><a href="#after">After your visit</a></nav><a class="text-link" href="/visit/">Find hours and directions →</a></aside>
+  </div>
+</PatientPage>

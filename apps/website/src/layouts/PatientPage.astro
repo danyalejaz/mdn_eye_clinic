@@ -1,0 +1,30 @@
+---
+import Base from "./Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { portalUrl } from "../data/clinic";
+import type { ClinicProfile } from "../lib/catalog";
+
+interface Props {
+  title: string;
+  description: string;
+  label: string;
+  clinic: ClinicProfile | null;
+}
+const { title, description, label, clinic } = Astro.props;
+const clinicName = clinic?.name ?? "Mardan Eye Clinic";
+---
+<Base title={`${title} | ${clinicName}`} {description}>
+  <SiteHeader {clinicName} {portalUrl} />
+  <main id="main-content" tabindex="-1">
+    <header class="page-intro section-tint">
+      <div class="wrap">
+        <p class="eyebrow"><a href="/">Home</a> / {label}</p>
+        <h1>{title}</h1>
+        <p class="intro">{description}</p>
+      </div>
+    </header>
+    <slot />
+  </main>
+  <SiteFooter {clinicName} {portalUrl} phone={clinic?.phone ?? null} address={clinic?.address ?? "Street address not listed"} />
+</Base>

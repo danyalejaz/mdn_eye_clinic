@@ -1,12 +1,12 @@
 :root {
-  --clinic-cobalt: #086665;
-  --clinic-cobalt-hover: #064c4e;
-  --clinic-ink: #203436;
-  --clinic-navy: #173f44;
-  --clinic-muted: #4e6061;
-  --clinic-canvas: #f5f9f8;
-  --clinic-tint: #eef5f2;
-  --clinic-border: #cddbd9;
-  --clinic-focus: #267d81;
+  --clinic-accent: #984828;
+  --clinic-accent-hover: #78351d;
+  --clinic-ink: #332638;
+  --clinic-muted: #655e63;
+  --clinic-canvas: #fcf8ef;
+  --clinic-tint: #e9e6e7;
+  --clinic-border: #d5ced1;
+  --clinic-focus: #984828;
+  --clinic-display: Georgia, "Times New Roman", serif;
   --clinic-font: "Manrope", system-ui, sans-serif;
 }

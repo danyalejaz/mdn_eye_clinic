@@ -24,6 +24,10 @@ const address = clinic?.address ?? "Street address not listed";
     </section>
     <div class="section wrap appointment-page">
       <Booking {doctors} {portalUrl} />
+      <section class="booking-help" aria-labelledby="confirmation-help">
+        <h2 id="confirmation-help">When is my time confirmed?</h2>
+        <p>Selecting a time opens patient sign-in; it does not reserve the slot. Confirm the visit in your account and keep the booking reference for reception. If a time is no longer available, check another date.</p>
+      </section>
       <div class="actions">
         <a class="text-link" href={`${portalUrl}/sign-in`}>Manage an existing appointment <span aria-hidden="true">↗</span></a>
         <a class="text-link" href="/visit/">Plan your visit <span aria-hidden="true">→</span></a>

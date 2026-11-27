@@ -60,6 +60,12 @@ const departments = [...new Map(doctors.map((doctor) => [doctor.departmentSlug, 
   if (!date.value) date.value = today;
 
   let pending: AbortController | undefined;
+  const requestedDoctor = new URLSearchParams(location.search).get("doctorId");
+  if (requestedDoctor && doctors.has(requestedDoctor)) {
+    doctor.value = requestedDoctor;
+    department.value = doctors.get(requestedDoctor)?.dataset.department ?? "";
+    filterDoctors();
+  }
 
   function filterDoctors() {
     for (const option of doctors.values()) {

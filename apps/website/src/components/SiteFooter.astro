@@ -28,8 +28,9 @@ const isBookingPage = Astro.url.pathname.replace(/\/$/, "") === "/appointments";
         {phone && <a href={`tel:${phone}`}>{phone}</a>}
       </div>
       <nav aria-label="Footer navigation">
-        <a href="/#care">Eye care services</a>
-        <a href="/#doctors">Find a doctor</a>
+        <a href="/services/">Eye care services</a>
+        <a href="/doctors/">Find a doctor</a>
+        <a href="/patient-guide/">Patient guide</a>
         <a href="/visit/">Plan your visit</a>
         <a href="/visit/#questions">Patient questions</a>
         <a href={`${portalUrl}/sign-in`}>My appointments <span aria-hidden="true">↗</span></a>
