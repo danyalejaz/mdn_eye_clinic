@@ -59,7 +59,7 @@ export function SignIn({ booking }: { booking: { doctorId: string; slotId: strin
         </form>
         <section className="portal-intro" aria-labelledby="entry-title">
           <p className="portal-eyebrow">Patient appointments</p>
-          <h2 id="entry-title">Your next visit starts here.</h2>
+          <h2 id="entry-title">Book or manage a visit</h2>
           <p>Confirm a new appointment or manage a visit you’ve already booked.</p>
         </section>
       </main>

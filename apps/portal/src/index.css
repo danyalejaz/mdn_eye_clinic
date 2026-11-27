@@ -42,10 +42,8 @@
   gap: .85rem;
   padding: clamp(1.4rem, 4vw, 3rem);
   color: white;
-  border-radius: 1.5rem;
-  background:
-    repeating-radial-gradient(circle at 88% 10%, transparent 0 17px, #adc3ff33 18px, transparent 19px 25px),
-    radial-gradient(ellipse at 85% 10%, #3849bb, transparent 70%), var(--clinic-navy);
+  border-radius: .25rem;
+  background: var(--clinic-navy);
 }
 .portal-eyebrow { color: var(--clinic-cobalt-hover); letter-spacing: .12em; text-transform: uppercase; font-size: .75rem; font-weight: 800; }
 .portal-intro .portal-eyebrow { color: #c6d3ff; }

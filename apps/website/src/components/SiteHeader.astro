@@ -17,9 +17,6 @@ const links = [
 <header class="site-header">
   <div class="wrap header-row">
     <a href="/" class="brand"><Mark /><span>{clinicName}<small>Eye care in Mardan</small></span></a>
-    <nav class="desktop-nav" aria-label="Main navigation">
-      {links.map(({ href, label }) => <a {href}>{label}</a>)}
-    </nav>
     <div class="header-actions">
       <a href={`${portalUrl}/sign-in`} class="portal-link">My appointments <span aria-hidden="true">↗</span></a>
       <a href="/appointments/" class="button primary">Book a visit</a>
@@ -38,6 +35,9 @@ const links = [
       </details>
     </div>
   </div>
+  <nav class="desktop-nav wrap" aria-label="Main navigation">
+    {links.map(({ href, label }) => <a {href}>{label}</a>)}
+  </nav>
 </header>
 
 <script>
