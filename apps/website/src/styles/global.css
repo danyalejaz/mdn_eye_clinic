@@ -167,9 +167,14 @@ h1 em { color: var(--blue); font-style: normal; }
 
 .section { padding-block: clamp(3.7rem, 8vw, 7rem); }
 .section-tint { background: var(--ice); }
+.page-intro { padding-block: clamp(2.25rem, 6vw, 5rem); }
+.page-intro h1 { font-size: clamp(2.7rem, 6vw, 5.3rem); }
+.page-intro .intro { max-width: 50ch; }
+.appointment-page { padding-top: clamp(1.5rem, 4vw, 3rem); }
 .section-head { display: flex; justify-content: space-between; align-items: end; gap: 1.5rem; margin-bottom: 2rem; }
-.section-head > p, .faq-intro { max-width: 37ch; color: var(--muted); }
+.section-head > p { max-width: 37ch; color: var(--muted); }
 .section h2, .footer-top h2 { margin-top: .65rem; font-size: clamp(2.25rem, 4.35vw, 4.25rem); letter-spacing: -.07em; font-weight: 800; }
+.section .booking-title h2 { margin: 0; font-size: 1.28rem; letter-spacing: -.035em; }
 .section-number { display: inline-grid; place-items: center; width: 2rem; height: 1.6rem; border-radius: .35rem; background: #e1e8ff; letter-spacing: 0; }
 .card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; list-style: none; padding: 0; }
 .card-grid:has(> .service-card:only-child) { grid-template-columns: minmax(0, 1fr); }
@@ -194,16 +199,16 @@ h1 em { color: var(--blue); font-style: normal; }
 .visit-grid, .faq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1.25rem, 5vw, 5rem); align-items: start; }
 .visit-steps { padding: 0; list-style: none; }
 .visit-steps li { display: flex; gap: 1rem; padding-block: 1.1rem; border-top: 1px solid var(--line); }
+.visit-steps h2 { margin: 0; font-size: clamp(1.2rem, 2vw, 1.65rem); letter-spacing: -.04em; }
 .visit-steps p, .faq-list p { color: var(--muted); margin-top: .45rem; }
 .step-number { display: grid; place-items: center; flex: none; align-self: start; width: 2.4rem; height: 2.4rem; border-radius: 50%; background: var(--ice); color: var(--blue-hover); font-weight: 800; }
 .location { background: var(--navy); color: white; border-radius: var(--radius); padding: clamp(1.3rem, 3.75vw, 2.6rem); }
 .location .eyebrow, .site-footer .eyebrow { color: #b9c9ff; }
-.location h3 { margin-block: .55rem 1.3rem; font-size: clamp(1.5rem, 2.8vw, 2.35rem); }
+.location h2 { margin-block: .55rem 1.3rem; font-size: clamp(1.5rem, 2.8vw, 2.35rem); letter-spacing: -.04em; }
 .location dl { margin-bottom: 1.3rem; }
 .location dl div { display: grid; grid-template-columns: 4.4rem 1fr; gap: .65rem; padding: .6rem 0; border-top: 1px solid #ffffff32; }
 .location dt { color: #c4cef2; }
 .faq-grid { grid-template-columns: .75fr 1.25fr; }
-.faq-intro { margin-top: 1rem; }
 .faq-list { border-top: 1px solid #b8c2db; }
 .faq-list details { border-bottom: 1px solid #b8c2db; }
 .faq-list summary, .mobile-nav summary { list-style: none; }

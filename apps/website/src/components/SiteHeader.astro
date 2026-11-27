@@ -8,10 +8,9 @@ interface Props {
 
 const { portalUrl, clinicName } = Astro.props;
 const links = [
-  { href: "#care", label: "Eye care" },
-  { href: "#doctors", label: "Doctors" },
-  { href: "#visit", label: "Your visit" },
-  { href: "#questions", label: "FAQs" },
+  { href: "/#care", label: "Eye care" },
+  { href: "/#doctors", label: "Doctors" },
+  { href: "/visit/", label: "Your visit" },
 ];
 ---
 
@@ -22,8 +21,8 @@ const links = [
       {links.map(({ href, label }) => <a {href}>{label}</a>)}
     </nav>
     <div class="header-actions">
-      <a href={`${portalUrl}/sign-in`} class="portal-link">Patient portal <span aria-hidden="true">↗</span></a>
-      <a href="#book" class="button primary">Book a visit</a>
+      <a href={`${portalUrl}/sign-in`} class="portal-link">My appointments <span aria-hidden="true">↗</span></a>
+      <a href="/appointments/" class="button primary">Book a visit</a>
       <details class="mobile-nav">
         <summary>
           <span class="visually-hidden">Navigation menu</span>
@@ -33,7 +32,8 @@ const links = [
         </summary>
         <nav aria-label="Mobile navigation">
           {links.map(({ href, label }) => <a {href}>{label}</a>)}
-          <a href={`${portalUrl}/sign-in`}>Patient portal ↗</a>
+          <a href="/appointments/">Book a visit</a>
+          <a href={`${portalUrl}/sign-in`}>My appointments <span aria-hidden="true">↗</span></a>
         </nav>
       </details>
     </div>

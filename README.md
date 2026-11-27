@@ -63,8 +63,12 @@ The build bundles the Worker with Wrangler's dry-run mode for local verification
 
 ## Frontend
 
-`apps/website` is the public clinic site. `apps/portal` is patient sign-in and appointment booking.
-Shared visual tokens live in `packages/ui`. The site reads the published catalog. Booking confirms a slot through the API.
+The frontend is limited to public clinic information and patient appointments.
+`apps/website` serves the homepage, `/visit/` (address, hours and FAQs), and
+`/appointments/` (availability). `apps/portal` handles patient sign-in, booking,
+rescheduling, and cancellation. Admin and staff dashboards are outside this
+frontend's scope. The site reads the published catalog, and appointments are
+confirmed through the API.
 
 ```sh
 pnpm dev:website

@@ -9,17 +9,18 @@ interface Props {
 }
 
 const { portalUrl, clinicName, phone, address } = Astro.props;
+const isBookingPage = Astro.url.pathname.replace(/\/$/, "") === "/appointments";
 ---
 
 <footer class="site-footer">
   <div class="wrap">
-    <div class="footer-top">
+    {!isBookingPage && <div class="footer-top">
       <div>
         <p class="eyebrow">Your next visit</p>
         <h2>Ready to book?</h2>
       </div>
-      <a href="#book" class="button light">Find an appointment <span aria-hidden="true">↗</span></a>
-    </div>
+      <a href="/appointments/" class="button light">Find an appointment <span aria-hidden="true">↗</span></a>
+    </div>}
     <div class="footer-main">
       <div>
         <a href="/" class="brand"><Mark /><span>{clinicName}<small>Eye care in Mardan</small></span></a>
@@ -27,11 +28,11 @@ const { portalUrl, clinicName, phone, address } = Astro.props;
         {phone && <a href={`tel:${phone}`}>{phone}</a>}
       </div>
       <nav aria-label="Footer navigation">
-        <a href="#care">Eye care services</a>
-        <a href="#doctors">Find a doctor</a>
-        <a href="#visit">Plan your visit</a>
-        <a href="#questions">Patient questions</a>
-        <a href={`${portalUrl}/sign-in`}>Patient portal ↗</a>
+        <a href="/#care">Eye care services</a>
+        <a href="/#doctors">Find a doctor</a>
+        <a href="/visit/">Plan your visit</a>
+        <a href="/visit/#questions">Patient questions</a>
+        <a href={`${portalUrl}/sign-in`}>My appointments <span aria-hidden="true">↗</span></a>
       </nav>
     </div>
     <div class="footer-bottom">

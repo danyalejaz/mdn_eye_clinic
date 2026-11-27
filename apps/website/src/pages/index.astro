@@ -5,22 +5,13 @@ import SiteFooter from "../components/SiteFooter.astro";
 import Iris from "../components/Iris.astro";
 import Booking from "../components/Booking.astro";
 import Mark from "../components/Mark.astro";
-import { faqs, portalUrl } from "../data/clinic";
+import { portalUrl } from "../data/clinic";
 import { formatFee, loadCatalog } from "../lib/catalog";
 
 const { clinic, doctors, services } = await loadCatalog();
 const clinicName = clinic?.name ?? "Mardan Eye Clinic";
-const hours = clinic?.hoursSummary ?? "Hours not listed";
 const phone = clinic?.phone ?? null;
 const address = clinic?.address ?? "Street address not listed";
-const directions = clinic?.address
-  ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${clinicName}, ${clinic.address}`)}`
-  : null;
-const steps = [
-  { title: "Find a time", text: "Choose a doctor and day to see available appointments." },
-  { title: "Confirm your visit", text: "Sign in to the patient portal to reserve a slot and get your booking reference." },
-  { title: "Check in at reception", text: "Bring your booking reference, glasses and any previous eye reports you have." },
-];
 ---
 
 <Base title={`${clinicName} | Eye care in Mardan`} description="Explore eye care services and consultation fees, find a doctor and check appointment availability in Mardan.">
@@ -111,42 +102,9 @@ const steps = [
           <h2 id="visit-title">Know what to expect.</h2>
         </div>
       </div>
-      <div class="visit-grid">
-        <ol class="visit-steps" role="list">
-          {steps.map((step, index) => (
-            <li><span class="step-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-              <div><h3>{step.title}</h3><p>{step.text}</p></div>
-            </li>
-          ))}
-        </ol>
-        <div class="location">
-          <p class="eyebrow">Clinic information</p>
-          <h3>{clinicName}</h3>
-          <dl>
-            <div><dt>Address</dt><dd>{address}</dd></div>
-            <div><dt>Hours</dt><dd>{hours}</dd></div>
-            {phone && <div><dt>Phone</dt><dd><a href={`tel:${phone}`}>{phone}</a></dd></div>}
-          </dl>
-          {directions && <a class="button light" href={directions}>Get directions <span aria-hidden="true">↗</span></a>}
-        </div>
-      </div>
-    </section>
-
-    <section id="questions" class="section section-tint" aria-labelledby="questions-title">
-      <div class="wrap faq-grid">
-        <div>
-          <p class="eyebrow"><span class="section-number">04</span> Patient questions</p>
-          <h2 id="questions-title">Before you come.</h2>
-          <p class="faq-intro">Practical answers for your next appointment.</p>
-        </div>
-        <div class="faq-list">
-          {faqs.map((item) => (
-            <details open={item.open}>
-              <summary>{item.question}<span aria-hidden="true"></span></summary>
-              <p>{item.answer}</p>
-            </details>
-          ))}
-        </div>
+      <div class="actions">
+        <a class="button primary" href="/visit/">Address, hours and directions <span aria-hidden="true">→</span></a>
+        <a id="questions" class="text-link" href="/visit/#questions">Common questions <span aria-hidden="true">→</span></a>
       </div>
     </section>
   </main>
