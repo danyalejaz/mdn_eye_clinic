@@ -1,6 +1,5 @@
 import { afterAll, beforeAll, expect, it } from "vitest";
-import { getAuth } from "../src/identity";
-import { cookies, password, testPlatform } from "./platform";
+import { cookies, password, testPlatform, totpCode } from "./platform";
 
 let platform: Awaited<ReturnType<typeof testPlatform>>;
 beforeAll(async () => { platform = await testPlatform(); }, 15_000);
@@ -36,12 +35,7 @@ it("requires MFA for each staff session and rejects foreign origins", async () =
   const enrolled = await platform.request(enablePath, { cookie, body: { password } });
   expect(enrolled.status).toBe(200);
   const { totpURI } = await enrolled.json<{ totpURI: string }>();
-  const encoded = new URL(totpURI).searchParams.get("secret")!;
-  const bits = [...encoded.replace(/=+$/, "")].map((char) =>
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".indexOf(char).toString(2).padStart(5, "0"),
-  ).join("");
-  const secret = String.fromCharCode(...(bits.match(/.{8}/g) ?? []).map((byte) => parseInt(byte, 2)));
-  const { code } = await getAuth(platform.env).api.generateTOTP({ body: { secret } });
+  const code = await totpCode(platform.env, totpURI);
   const verify = (session: string) => platform.request("/api/auth/two-factor/verify-totp", { cookie: session, body: { code } });
   const verified = await verify(cookie);
   expect(verified.status).toBe(200);

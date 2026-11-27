@@ -46,9 +46,34 @@ export async function testPlatform(fixtures: string[] = []) {
     return user.id;
   }
 
-  return { env, request, account, dispose: () => platform.dispose() };
+  async function staff(role: string, doctorId: string | null = null) {
+    const email = `${role}-${crypto.randomUUID()}@example.test`;
+    const userId = await account(email, role, doctorId);
+    const headers = { "CF-Connecting-IP": `2001:db8::${crypto.randomUUID().slice(0, 4)}` };
+    const initial = await request("/api/auth/sign-in/email", { body: { email, password }, headers });
+    if (!initial.ok) throw new Error(`Staff sign-in failed: ${initial.status}`);
+    const cookie = cookies(initial);
+    const enabled = await request("/api/auth/two-factor/enable", { cookie, body: { password }, headers });
+    if (!enabled.ok) throw new Error(`MFA enrollment failed: ${enabled.status}`);
+    const { totpURI } = await enabled.json<{ totpURI: string }>();
+    const code = await totpCode(env, totpURI);
+    const verified = await request("/api/auth/two-factor/verify-totp", { cookie, body: { code }, headers });
+    if (!verified.ok) throw new Error(`MFA verification failed: ${verified.status}`);
+    return { userId, cookie: cookies(verified) };
+  }
+
+  return { env, request, account, staff, dispose: () => platform.dispose() };
 }
 
+export async function totpCode(env: ApiEnv["Bindings"], totpURI: string) {
+  const encoded = new URL(totpURI).searchParams.get("secret")!;
+  const bits = [...encoded.replace(/=+$/, "")].map((char) =>
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".indexOf(char).toString(2).padStart(5, "0"),
+  ).join("");
+  const secret = String.fromCharCode(...(bits.match(/.{8}/g) ?? []).map((byte) => parseInt(byte, 2)));
+  const { code } = await getAuth(env).api.generateTOTP({ body: { secret } });
+  return code;
+}
 export function cookies(response: Response) {
   return response.headers.getSetCookie().filter((value) => !value.includes("Max-Age=0"))
     .map((value) => value.split(";", 1)[0]).join("; ");
