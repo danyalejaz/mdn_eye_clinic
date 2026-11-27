@@ -1,0 +1,284 @@
+openapi: 3.1.0
+info:
+  title: Mardan Eye Clinic API
+  version: 0.1.0
+  description: Backend API contract for the clinic platform.
+servers:
+  - url: /api/v1
+paths:
+  /me:
+    get:
+      operationId: getCurrentActor
+      summary: Read the authenticated clinic actor
+      security:
+        - ClinicSession: []
+      responses:
+        "200":
+          description: Active clinic account and associated patient or doctor scope.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [userId, role, patientId, doctorId]
+                    properties:
+                      userId: { type: string }
+                      role: { type: string, enum: [patient, receptionist, doctor, admin] }
+                      patientId: { type: [string, "null"] }
+                      doctorId: { type: [string, "null"] }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /health:
+    get:
+      operationId: getHealth
+      summary: Check Worker liveness
+      description: Reports whether the Worker can handle requests. It does not probe databases or external services.
+      security: []
+      responses:
+        "200":
+          description: The API Worker is responding.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [status]
+                    properties:
+                      status:
+                        type: string
+                        const: ok
+              example:
+                data:
+                  status: ok
+        "500":
+          description: The Worker could not handle the request.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /public/clinic:
+    get:
+      operationId: getPublicClinic
+      summary: Read published clinic details
+      responses:
+        "200":
+          description: Published clinic details.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/PublicClinic"
+        "404":
+          $ref: "#/components/responses/CatalogNotFound"
+  /public/doctors:
+    get:
+      operationId: listPublicDoctors
+      summary: List published doctors
+      parameters:
+        - $ref: "#/components/parameters/CatalogCursor"
+        - $ref: "#/components/parameters/CatalogLimit"
+        - $ref: "#/components/parameters/CatalogDepartment"
+        - name: q
+          in: query
+          description: Literal substring of the doctor's name or specialty, with ASCII case folding.
+          schema: { type: string, minLength: 1, maxLength: 80 }
+      responses:
+        "200":
+          description: Page of doctors in ascending slug order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PublicDoctor"
+                  meta:
+                    $ref: "#/components/schemas/CatalogPage"
+        "422":
+          $ref: "#/components/responses/CatalogValidation"
+  /public/doctors/{slug}:
+    get:
+      operationId: getPublicDoctor
+      summary: Read a published doctor profile
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/CatalogSlug"
+      responses:
+        "200":
+          description: Published doctor profile.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/PublicDoctor"
+        "404":
+          $ref: "#/components/responses/CatalogNotFound"
+  /public/services:
+    get:
+      operationId: listPublicServices
+      summary: List published clinic services
+      parameters:
+        - $ref: "#/components/parameters/CatalogCursor"
+        - $ref: "#/components/parameters/CatalogLimit"
+        - $ref: "#/components/parameters/CatalogDepartment"
+      responses:
+        "200":
+          description: Page of services in ascending slug order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PublicService"
+                  meta:
+                    $ref: "#/components/schemas/CatalogPage"
+        "422":
+          $ref: "#/components/responses/CatalogValidation"
+components:
+  securitySchemes:
+    ClinicSession:
+      type: apiKey
+      in: cookie
+      name: better-auth.session_token
+      description: Better Auth session cookie (Secure and __Secure-prefixed on HTTPS). Staff also require MFA.
+  parameters:
+    CatalogCursor:
+      name: cursor
+      in: query
+      description: Use the previous page's nextCursor with the same filters.
+      schema:
+        $ref: "#/components/schemas/CatalogSlug"
+    CatalogLimit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+    CatalogDepartment:
+      name: department
+      in: query
+      schema:
+        $ref: "#/components/schemas/CatalogSlug"
+  responses:
+    AuthRequired:
+      description: A valid session is required.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    Forbidden:
+      description: Role, account scope, MFA or request origin is not authorized.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    CatalogNotFound:
+      description: No matching published resource.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    CatalogValidation:
+      description: Invalid, repeated, or unsupported query parameters.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+  headers:
+    RequestId:
+      description: Server-generated correlation ID for this request.
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    CatalogSlug:
+      type: string
+      maxLength: 80
+      pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    CatalogPage:
+      type: object
+      required: [nextCursor]
+      properties:
+        nextCursor: { type: [string, "null"] }
+    PublicClinic:
+      type: object
+      required: [name, address, phone, hoursSummary, timezone, currency]
+      properties:
+        name: { type: string }
+        address: { type: string }
+        phone: { type: [string, "null"] }
+        hoursSummary: { type: [string, "null"] }
+        timezone: { type: string, const: Asia/Karachi }
+        currency: { type: string, const: PKR }
+    PublicDoctor:
+      type: object
+      required: [id, slug, displayName, specialty, qualifications, photoUrl, feeMinor, currency, departmentSlug, departmentName]
+      properties:
+        id: { type: string }
+        slug:
+          $ref: "#/components/schemas/CatalogSlug"
+        displayName: { type: string }
+        specialty: { type: string }
+        qualifications: { type: [string, "null"] }
+        photoUrl: { type: [string, "null"] }
+        feeMinor: { type: integer, minimum: 0, maximum: 9007199254740991 }
+        currency: { type: string, const: PKR }
+        departmentSlug:
+          $ref: "#/components/schemas/CatalogSlug"
+        departmentName: { type: string }
+    PublicService:
+      type: object
+      required: [slug, name, description, feeMinor, currency, departmentSlug, departmentName]
+      properties:
+        slug:
+          $ref: "#/components/schemas/CatalogSlug"
+        name: { type: string }
+        description: { type: [string, "null"] }
+        feeMinor: { type: integer, minimum: 0, maximum: 9007199254740991 }
+        currency: { type: string, const: PKR }
+        departmentSlug:
+          $ref: "#/components/schemas/CatalogSlug"
+        departmentName: { type: string }
+    ApiError:
+      type: object
+      required: [error, requestId]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+        requestId:
+          type: string
+          format: uuid

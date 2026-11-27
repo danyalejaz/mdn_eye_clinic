@@ -1,0 +1,45 @@
+---
+interface Props {
+  portalUrl: string;
+}
+const { portalUrl } = Astro.props;
+---
+
+<footer class="bg-teal-dark text-on-primary">
+  <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-3xl grid grid-cols-1 md:grid-cols-12 gap-2xl">
+    <div class="md:col-span-4 flex flex-col gap-md">
+      <span class="font-editorial text-section-title text-on-primary">Clinic Name</span>
+      <p class="font-body text-body-sm text-sage max-w-xs">
+        Outpatient medical clinic in Mardan, Pakistan. Scheduled consultations only — not an emergency service.
+      </p>
+      <p class="font-body text-body-sm text-sage-accent tabular-nums">+92 300 0000001 · contact@clinic.example.test</p>
+    </div>
+    <div class="md:col-span-2 flex flex-col gap-xs">
+      <span class="font-label text-label-md text-on-primary pb-xs">Navigation</span>
+      <a href="/" class="font-body text-body-sm text-sage hover:text-on-primary">Home</a>
+      <a href="#about" class="font-body text-body-sm text-sage hover:text-on-primary">About</a>
+      <a href="#doctors" class="font-body text-body-sm text-sage hover:text-on-primary">Doctors</a>
+      <a href="#contact" class="font-body text-body-sm text-sage hover:text-on-primary">Contact</a>
+    </div>
+    <div class="md:col-span-3 flex flex-col gap-xs">
+      <span class="font-label text-label-md text-on-primary pb-xs">Medical services</span>
+      <a href="#services" class="font-body text-body-sm text-sage hover:text-on-primary">General Medicine</a>
+      <a href="#services" class="font-body text-body-sm text-sage hover:text-on-primary">Specialist Consultations</a>
+      <a href="#services" class="font-body text-body-sm text-sage hover:text-on-primary">Preventive Healthcare</a>
+      <a href="#services" class="font-body text-body-sm text-sage hover:text-on-primary">Follow-up Care</a>
+    </div>
+    <div class="md:col-span-3 flex flex-col gap-xs">
+      <span class="font-label text-label-md text-on-primary pb-xs">Patient resources</span>
+      <a href={`${portalUrl}/patient`} class="font-body text-body-sm text-sage hover:text-on-primary">Patient portal</a>
+      <a href="#faq" class="font-body text-body-sm text-sage hover:text-on-primary">Frequently asked questions</a>
+      <a href="#privacy" class="font-body text-body-sm text-sage hover:text-on-primary">Privacy policy</a>
+      <a href="#terms" class="font-body text-body-sm text-sage hover:text-on-primary">Terms &amp; conditions</a>
+    </div>
+  </div>
+  <div class="border-t border-primary">
+    <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-lg flex flex-col sm:flex-row items-center justify-between gap-md font-caption text-caption text-sage-accent">
+      <span>© 2026 Clinic Name. Provisional branding pending clinic approval.</span>
+      <span class="tabular-nums">Mon–Sat · 9:00 AM – 8:00 PM · Asia/Karachi</span>
+    </div>
+  </div>
+</footer>
