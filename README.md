@@ -38,6 +38,15 @@ The checked-in D1 ID is for local emulation. Production requires an
 environment-specific D1 binding and approved catalog content; never apply the
 fictional seed remotely.
 
+## Identity
+
+Set `AUTH_BASE_URL` to the exact portal origin and set `BETTER_AUTH_SECRET` to
+a random secret of at least 32 characters (an ignored `apps/api/.dev.vars` is
+appropriate for local use). Staff must complete authenticator MFA on each
+session before using clinic APIs. Application roles come from `clinic_accounts`.
+The public Better Auth signup route is disabled; accounts must be provisioned
+through a trusted server workflow. See `/api/v1/me` for the current clinic scope.
+
 ## Verify changes
 
 Run `pnpm typecheck`, `pnpm test`, and `pnpm build` from the repository root.

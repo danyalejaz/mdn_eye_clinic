@@ -3,6 +3,7 @@
   "name": "mdn-eye-clinic-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-27",
+  "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
   "preview_urls": false,
   "send_metrics": false,

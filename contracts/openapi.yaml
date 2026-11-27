@@ -6,6 +6,33 @@ info:
 servers:
   - url: /api/v1
 paths:
+  /me:
+    get:
+      operationId: getCurrentActor
+      summary: Read the authenticated clinic actor
+      security:
+        - ClinicSession: []
+      responses:
+        "200":
+          description: Active clinic account and associated patient or doctor scope.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [userId, role, patientId, doctorId]
+                    properties:
+                      userId: { type: string }
+                      role: { type: string, enum: [patient, receptionist, doctor, admin] }
+                      patientId: { type: [string, "null"] }
+                      doctorId: { type: [string, "null"] }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /health:
     get:
       operationId: getHealth
@@ -138,6 +165,12 @@ paths:
         "422":
           $ref: "#/components/responses/CatalogValidation"
 components:
+  securitySchemes:
+    ClinicSession:
+      type: apiKey
+      in: cookie
+      name: better-auth.session_token
+      description: Better Auth session cookie (Secure and __Secure-prefixed on HTTPS). Staff also require MFA.
   parameters:
     CatalogCursor:
       name: cursor
@@ -155,6 +188,18 @@ components:
       schema:
         $ref: "#/components/schemas/CatalogSlug"
   responses:
+    AuthRequired:
+      description: A valid session is required.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    Forbidden:
+      description: Role, account scope, MFA or request origin is not authorized.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
     CatalogNotFound:
       description: No matching published resource.
       content:

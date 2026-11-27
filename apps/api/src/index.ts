@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import { publicCatalog } from "./public-catalog";
+import { handleAuth, requireActor, type ApiEnv } from "./identity";
 
-const app = new Hono<{ Variables: { requestId: string } }>();
+const app = new Hono<ApiEnv>();
 
 app.use("*", async (c, next) => {
   const requestId = crypto.randomUUID();
@@ -14,6 +15,8 @@ app.use("*", async (c, next) => {
 
 app.get("/api/v1/health", (c) => c.json({ data: { status: "ok" } }));
 app.route("/api/v1/public", publicCatalog);
+app.on(["GET", "POST"], "/api/auth/*", handleAuth);
+app.get("/api/v1/me", requireActor, (c) => c.json({ data: c.get("actor") }));
 
 app.notFound((c) =>
   c.json(
