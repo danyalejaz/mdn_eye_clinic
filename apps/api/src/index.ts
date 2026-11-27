@@ -1,4 +1,6 @@
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
+import { appointments, availability } from "./appointments";
 import { publicCatalog } from "./public-catalog";
 import { handleAuth, requireActor, type ApiEnv } from "./identity";
 
@@ -14,7 +16,14 @@ app.use("*", async (c, next) => {
 });
 
 app.get("/api/v1/health", (c) => c.json({ data: { status: "ok" } }));
+app.use("/api/*", bodyLimit({
+  maxSize: 64 * 1024,
+  onError: (c) => c.json({ error: { code: "PAYLOAD_TOO_LARGE", message: "Request body is too large." },
+    requestId: c.get("requestId") }, 413),
+}));
 app.route("/api/v1/public", publicCatalog);
+app.route("/api/v1/public", availability);
+app.route("/api/v1/appointments", appointments);
 app.on(["GET", "POST"], "/api/auth/*", handleAuth);
 app.get("/api/v1/me", requireActor, (c) => c.json({ data: c.get("actor") }));
 

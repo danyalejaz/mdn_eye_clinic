@@ -82,15 +82,21 @@ export function requireRole(...roles: Role[]): MiddlewareHandler<ApiEnv> {
 }
 
 const authRoutes = new Set([
-  "POST /sign-in/email", "POST /sign-out", "GET /get-session",
+  "POST /sign-in/email", "POST /sign-out",
   "POST /two-factor/enable", "POST /two-factor/verify-totp", "POST /two-factor/verify-backup-code",
 ]);
 
-export function handleAuth(c: Context<ApiEnv>) {
+export async function handleAuth(c: Context<ApiEnv>) {
   if (!authRoutes.has(`${c.req.method} ${c.req.path.slice("/api/auth".length)}`)) return c.notFound();
   if (c.req.method === "POST" && (!c.env.AUTH_BASE_URL ||
       c.req.header("Origin") !== new URL(c.env.AUTH_BASE_URL).origin)) {
     return apiError(c, 403, "FORBIDDEN", "Request origin is not authorized.");
   }
-  return getAuth(c.env).handler(c.req.raw);
+  const response = await getAuth(c.env).handler(c.req.raw);
+  if (!response.ok) return response;
+  const data = await response.json<Record<string, unknown>>();
+  const { token: _token, session: _session, ...safeData } = data;
+  const headers = new Headers(response.headers);
+  headers.delete("Content-Length");
+  return Response.json(safeData, { status: response.status, headers });
 }

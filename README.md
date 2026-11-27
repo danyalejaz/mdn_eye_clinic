@@ -47,6 +47,15 @@ session before using clinic APIs. Application roles come from `clinic_accounts`.
 The public Better Auth signup route is disabled; accounts must be provisioned
 through a trusted server workflow. See `/api/v1/me` for the current clinic scope.
 
+## Appointments
+
+`GET /api/v1/public/availability` uses inclusive `from` and `to` business dates
+in Asia/Karachi and an optional `doctorId`. `GET /api/v1/appointments` and
+`GET /api/v1/appointments/{id}` scope results to the linked patient or assigned
+doctor. `POST /api/v1/appointments` requires an `Idempotency-Key` and a doctor
+and slot ID; reception also supplies a patient ID. Cancellation and same-doctor
+rescheduling take `expectedVersion` to prevent concurrent overwrites.
+
 ## Verify changes
 
 Run `pnpm typecheck`, `pnpm test`, and `pnpm build` from the repository root.

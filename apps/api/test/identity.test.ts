@@ -14,6 +14,7 @@ it("requires a real session and an active clinic account", async () => {
   const userId = await platform.account(email, "patient");
   const signedIn = await platform.request("/api/auth/sign-in/email", { body: { email, password } });
   expect(signedIn.status).toBe(200);
+  expect(await signedIn.json()).not.toHaveProperty("token");
   const cookie = cookies(signedIn);
   const me = await platform.request(path, { cookie });
   expect(await me.json()).toEqual({ data: { userId, role: "patient", doctorId: null, patientId: null } });

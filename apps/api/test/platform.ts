@@ -19,12 +19,9 @@ export async function testPlatform(fixtures: string[] = []) {
     for (const file of [...files, ...fixtures.map((name) => new URL(`./fixtures/${name}`, import.meta.url))]) {
       const sql = await readFile(file, "utf8");
       const statements = sql.split(/^-- statement-breakpoint\s*$/m);
-      for (const statement of statements) {
-        // D1 exec accepts one complete SQL statement per line; keep migration separators explicit for triggers.
-        const queries = statements.length > 1 ? [statement.trim()] :
-          statement.split(/;\s*(?:\r?\n|$)/).map((part) => part.trim()).filter(Boolean);
-        await env.DB.batch(queries.map((query) => env.DB.prepare(query)));
-      }
+      const queries = statements.flatMap((statement) => /^\s*CREATE TRIGGER\b/i.test(statement)
+        ? [statement.trim()] : statement.split(/;\s*(?:\r?\n|$)/).map((part) => part.trim()).filter(Boolean));
+      await env.DB.batch(queries.map((query) => env.DB.prepare(query)));
     }
   } catch (error) {
     await platform.dispose();
