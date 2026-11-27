@@ -4,52 +4,50 @@ import Mark from "./Mark.astro";
 interface Props {
   portalUrl: string;
   clinicName: string;
-  hours: string;
-  phone: string | null;
 }
 
-const { portalUrl, clinicName, hours, phone } = Astro.props;
+const { portalUrl, clinicName } = Astro.props;
 const links = [
-  { href: "#care", label: "Care" },
+  { href: "#care", label: "Eye care" },
   { href: "#doctors", label: "Doctors" },
-  { href: "#visit", label: "Visit" },
-  { href: "#questions", label: "Questions" },
+  { href: "#visit", label: "Your visit" },
+  { href: "#questions", label: "FAQs" },
 ];
 ---
 
-<header class="sticky top-0 z-40 border-t-2 border-gold bg-surface/90 backdrop-blur-md">
-  <div class="max-w-editorial mx-auto px-lg lg:px-4xl h-[68px] flex items-center justify-between gap-lg">
-    <a href="/" class="flex items-center gap-sm min-w-0">
-      <Mark />
-      <span class="font-editorial text-[1.2rem] leading-none tracking-[-0.03em] truncate">{clinicName}</span>
-    </a>
-    <nav aria-label="Page" class="hidden lg:flex items-center gap-2xl">
-      {links.map((link) => (
-        <a href={link.href} class="text-[14px] tracking-[-0.01em] text-editorial-ink hover:text-primary">{link.label}</a>
-      ))}
+<header class="site-header">
+  <div class="wrap header-row">
+    <a href="/" class="brand"><Mark /><span>{clinicName}<small>Eye care in Mardan</small></span></a>
+    <nav class="desktop-nav" aria-label="Main navigation">
+      {links.map(({ href, label }) => <a {href}>{label}</a>)}
     </nav>
-    <div class="flex items-center gap-md">
-      <a href={`${portalUrl}/sign-in`} class="hidden sm:inline text-[14px] text-editorial-muted hover:text-editorial-ink">Sign in</a>
-      <a href="#book" class="btn-ink h-10 px-lg text-[14px]">Book</a>
-      <button
-        id="menu-button"
-        type="button"
-        class="lg:hidden inline-flex items-center justify-center w-10 h-10 border border-editorial-border"
-        aria-expanded="false"
-        aria-controls="menu-panel"
-      >
-        <span class="sr-only">Open menu</span>
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
-          <path d="M4 7h16M4 12h16M4 17h16"></path>
-        </svg>
-      </button>
+    <div class="header-actions">
+      <a href={`${portalUrl}/sign-in`} class="portal-link">Patient portal <span aria-hidden="true">↗</span></a>
+      <a href="#book" class="button primary">Book a visit</a>
+      <details class="mobile-nav">
+        <summary>
+          <span class="visually-hidden">Navigation menu</span>
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+        </summary>
+        <nav aria-label="Mobile navigation">
+          {links.map(({ href, label }) => <a {href}>{label}</a>)}
+          <a href={`${portalUrl}/sign-in`}>Patient portal ↗</a>
+        </nav>
+      </details>
     </div>
   </div>
-  <nav id="menu-panel" hidden class="lg:hidden border-t border-editorial-border bg-surface px-lg py-sm flex flex-col">
-    {links.map((link) => (
-      <a href={link.href} class="py-md border-b border-editorial-border text-[17px]">{link.label}</a>
-    ))}
-    <a href={`${portalUrl}/sign-in`} class="py-md text-primary">Sign in to a booking</a>
-    <p class="py-sm text-[13px] text-editorial-muted">{hours}{phone ? ` · ${phone}` : ""}</p>
-  </nav>
 </header>
+
+<script>
+  const menu = document.querySelector<HTMLDetailsElement>(".mobile-nav");
+  menu?.addEventListener("click", (event) => {
+    if (event.target instanceof HTMLAnchorElement) menu.open = false;
+  });
+  menu?.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !menu.open) return;
+    menu.open = false;
+    menu.querySelector("summary")?.focus();
+  });
+</script>

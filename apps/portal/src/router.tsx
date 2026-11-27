@@ -8,6 +8,16 @@ const rootRoute = createRootRoute({
   component: () => <Outlet />,
 });
 
+function bookingSearch(search: Record<string, unknown>): { doctorId: string; slotId: string; date?: string } {
+  const date = typeof search.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search.date)
+    ? search.date : undefined;
+  return {
+    doctorId: typeof search.doctorId === "string" ? search.doctorId : "",
+    slotId: typeof search.slotId === "string" ? search.slotId : "",
+    date,
+  };
+}
+
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
@@ -23,31 +33,31 @@ const indexRoute = createRoute({
 const signInRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/sign-in",
-  beforeLoad: async () => {
+  validateSearch: bookingSearch,
+  beforeLoad: async ({ search }) => {
     const session = await loadSession();
     if (session.state === "ready" && session.actor.role === "patient") {
-      throw redirect({ to: "/patient", search: { doctorId: "", slotId: "" } });
+      throw redirect({ to: "/patient", search });
     }
   },
-  component: SignIn,
+  component: function PatientSignIn() {
+    return <SignIn booking={signInRoute.useSearch()} />;
+  },
 });
 
 const patientRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/patient",
-  validateSearch: (search: Record<string, unknown>) => ({
-    doctorId: typeof search.doctorId === "string" ? search.doctorId : "",
-    slotId: typeof search.slotId === "string" ? search.slotId : "",
-  }),
-  beforeLoad: async () => {
+  validateSearch: bookingSearch,
+  beforeLoad: async ({ search }) => {
     const session = await loadSession();
-    if (session.state !== "ready") throw redirect({ to: "/sign-in" });
+    if (session.state !== "ready") throw redirect({ to: "/sign-in", search });
     return { actor: session.actor };
   },
   component: function BookingScreen() {
     const { actor } = patientRoute.useRouteContext();
-    const { doctorId, slotId } = patientRoute.useSearch();
-    return <PatientDashboard actor={actor} doctorId={doctorId} slotId={slotId} />;
+    const { doctorId, slotId, date } = patientRoute.useSearch();
+    return <PatientDashboard actor={actor} doctorId={doctorId} slotId={slotId} initialDate={date} />;
   },
 });
 

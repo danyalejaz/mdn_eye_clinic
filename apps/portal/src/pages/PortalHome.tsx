@@ -15,7 +15,7 @@ export function PortalHome() {
         <p className="font-body text-body-md text-muted">
           Sign in with a patient account to confirm an open time, or to reschedule and cancel a visit you already booked.
         </p>
-        <Link to="/sign-in" className="inline-flex items-center justify-center h-[48px] px-xl rounded-md bg-primary text-on-primary font-label text-label-md hover:bg-primary-hover w-fit">
+        <Link to="/sign-in" search={{ doctorId: "", slotId: "" }} className="inline-flex items-center justify-center h-[48px] px-xl rounded-md bg-primary text-on-primary font-label text-label-md hover:bg-primary-hover w-fit">
           Sign in to book
         </Link>
       </main>

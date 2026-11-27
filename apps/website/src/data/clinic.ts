@@ -1,11 +1,5 @@
 export const portalUrl = import.meta.env.PUBLIC_PORTAL_URL ?? "http://127.0.0.1:5173";
 
-export const images = {
-  hero: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=1600&q=80",
-  portraitA: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=1400&q=80",
-  portraitB: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=1400&q=80",
-} as const;
-
 export const faqs: { question: string; answer: string; open?: boolean }[] = [
   {
     question: "How do I book?",

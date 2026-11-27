@@ -3,7 +3,7 @@ import { useRouter } from "@tanstack/react-router";
 import { Mark, Notice, controlClass, primaryButtonClass } from "../components/ui";
 import { loadSession } from "../session";
 
-export function SignIn() {
+export function SignIn({ booking }: { booking: { doctorId: string; slotId: string; date?: string } }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,7 +31,7 @@ export function SignIn() {
         setError("This page is for patient appointment booking.");
         return;
       }
-      await router.navigate({ to: "/patient", search: { doctorId: "", slotId: "" } });
+      await router.navigate({ to: "/patient", search: booking });
     } catch {
       setError("The clinic service is unavailable.");
     } finally {

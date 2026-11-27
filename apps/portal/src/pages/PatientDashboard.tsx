@@ -5,11 +5,11 @@ import { businessToday, formatWhen, money } from "../format";
 import { clearSession } from "../session";
 import type { Actor, Appointment, OpenSlot, PublicDoctor } from "../types";
 
-export function PatientDashboard({ actor, doctorId, slotId }: { actor: Actor; doctorId: string; slotId: string }) {
+export function PatientDashboard({ actor, doctorId, slotId, initialDate }: { actor: Actor; doctorId: string; slotId: string; initialDate?: string }) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [doctors, setDoctors] = useState<PublicDoctor[]>([]);
   const [chosenDoctor, setChosenDoctor] = useState(doctorId);
-  const [date, setDate] = useState(businessToday());
+  const [date, setDate] = useState(() => initialDate && initialDate >= businessToday() ? initialDate : businessToday());
   const [slots, setSlots] = useState<OpenSlot[]>([]);
   const [rescheduleId, setRescheduleId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

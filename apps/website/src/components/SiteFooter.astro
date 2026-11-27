@@ -1,46 +1,42 @@
 ---
+import Mark from "./Mark.astro";
+
 interface Props {
   portalUrl: string;
   clinicName: string;
   phone: string | null;
-  hours: string;
   address: string;
-  services: string[];
 }
 
-const { portalUrl, clinicName, phone, hours, address, services } = Astro.props;
+const { portalUrl, clinicName, phone, address } = Astro.props;
 ---
 
-<footer class="bg-night text-on-primary mt-auto">
-  <div class="max-w-editorial mx-auto px-lg lg:px-4xl pt-4xl pb-3xl flex flex-col lg:flex-row lg:items-end justify-between gap-xl border-b border-white/10">
-    <h2 class="font-editorial text-[clamp(2.4rem,4vw,3.8rem)] leading-[1.02] tracking-[-0.03em] max-w-[16ch]">Choose an hour. Then make it yours.</h2>
-    <a href="#book" class="btn-ink bg-surface text-editorial-ink hover:bg-gold hover:text-night shrink-0">Check open times</a>
-  </div>
-  <div class="max-w-editorial mx-auto px-lg lg:px-4xl py-3xl grid grid-cols-1 md:grid-cols-12 gap-2xl">
-    <div class="md:col-span-5 flex flex-col gap-md">
-      <p class="font-editorial text-[1.7rem] leading-none tracking-[-0.03em]">{clinicName}</p>
-      <p class="text-white/70 max-w-[24rem] text-[15px] leading-relaxed">{address}</p>
-      <p class="text-[15px] tabular-nums text-gold">{hours}{phone ? ` · ${phone}` : ""}</p>
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <div>
+        <p class="eyebrow">Your next visit</p>
+        <h2>Ready to book?</h2>
+      </div>
+      <a href="#book" class="button light">Find an appointment <span aria-hidden="true">↗</span></a>
     </div>
-    <div class="md:col-span-3 flex flex-col gap-sm text-[15px]">
-      <span class="kicker">On this page</span>
-      <a href="#care" class="hover:text-gold">Care</a>
-      <a href="#doctors" class="hover:text-gold">Doctors</a>
-      <a href="#visit" class="hover:text-gold">Visit</a>
-      <a href="#questions" class="hover:text-gold">Questions</a>
+    <div class="footer-main">
+      <div>
+        <a href="/" class="brand"><Mark /><span>{clinicName}<small>Eye care in Mardan</small></span></a>
+        <p>{address}</p>
+        {phone && <a href={`tel:${phone}`}>{phone}</a>}
+      </div>
+      <nav aria-label="Footer navigation">
+        <a href="#care">Eye care services</a>
+        <a href="#doctors">Find a doctor</a>
+        <a href="#visit">Plan your visit</a>
+        <a href="#questions">Patient questions</a>
+        <a href={`${portalUrl}/sign-in`}>Patient portal ↗</a>
+      </nav>
     </div>
-    <div class="md:col-span-4 flex flex-col gap-sm text-[15px]">
-      <span class="kicker">Published services</span>
-      {services.length === 0 ? <span class="text-white/60">Services appear when the clinic publishes them.</span> : services.map((service) => (
-        <a href="#care" class="hover:text-gold">{service}</a>
-      ))}
-      <a href={`${portalUrl}/sign-in`} class="pt-sm text-gold hover:text-on-primary">Sign in to book</a>
-    </div>
-  </div>
-  <div class="border-t border-white/10">
-    <div class="max-w-editorial mx-auto px-lg lg:px-4xl py-lg flex flex-col sm:flex-row justify-between gap-sm text-[13px] text-white/55">
-      <span>© {new Date().getFullYear()} {clinicName}</span>
-      <span>Scheduled outpatient visits · Not an emergency service · Asia/Karachi</span>
+    <div class="footer-bottom">
+      <p>© {new Date().getFullYear()} {clinicName}</p>
+      <p>Scheduled outpatient visits only. This is not an emergency service.</p>
     </div>
   </div>
 </footer>

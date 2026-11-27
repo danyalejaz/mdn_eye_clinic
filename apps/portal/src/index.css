@@ -1,6 +1,28 @@
 @import "tailwindcss" source(".");
 @import "@clinic/ui/theme.css";
 
+@theme {
+  --color-primary: #2646d6;
+  --color-primary-hover: #1832ad;
+  --color-primary-soft: #e1e8ff;
+  --color-ink: #111b38;
+  --color-text: #111b38;
+  --color-muted: #4e5a73;
+  --color-canvas: #f5f7ff;
+  --color-border: #dbe1ef;
+  --color-control-border: #8290ab;
+  --color-focus: #2646d6;
+  --font-label: "Manrope", system-ui, sans-serif;
+  --font-headline: "Manrope", system-ui, sans-serif;
+  --font-title: "Manrope", system-ui, sans-serif;
+  --font-body: "Manrope", system-ui, sans-serif;
+  --font-caption: "Manrope", system-ui, sans-serif;
+}
+
+@layer base {
+  :focus-visible { outline: 3px solid #5879ff; outline-offset: 3px; }
+}
+
 @keyframes shimmer {
   from { background-position: 100% 0; }
   to { background-position: -100% 0; }

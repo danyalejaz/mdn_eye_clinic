@@ -76,9 +76,10 @@ export const secondaryButtonClass =
 export function Mark() {
   return (
     <span className="w-8 h-8 rounded-md bg-primary flex items-center justify-center text-on-primary" aria-hidden="true">
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-        <circle cx="12" cy="12" r="7" />
-        <path d="M12 8v8" />
+      <svg className="w-5 h-5" viewBox="0 0 26 18" fill="none">
+        <path d="M1 9s4.5-7.5 12-7.5S25 9 25 9s-4.5 7.5-12 7.5S1 9 1 9Z" stroke="currentColor" strokeWidth="1.6" />
+        <circle cx="13" cy="9" r="3.7" fill="currentColor" />
+        <circle cx="15.3" cy="6.7" r="1.4" className="fill-primary" />
       </svg>
     </span>
   );
