@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Mardan Eye Clinic API
-  version: 0.1.0
+  version: 0.2.0
   description: Backend API contract for the clinic platform.
 servers:
   - url: /api/v1
@@ -164,6 +164,628 @@ paths:
                     $ref: "#/components/schemas/CatalogPage"
         "422":
           $ref: "#/components/responses/CatalogValidation"
+  /public/availability:
+    get:
+      operationId: listAvailability
+      summary: List unreserved future slots in an inclusive Karachi business-date range
+      parameters:
+        - { $ref: "#/components/parameters/From" }
+        - { $ref: "#/components/parameters/To" }
+        - { $ref: "#/components/parameters/DoctorId" }
+      responses:
+        "200": { $ref: "#/components/responses/Availability" }
+        "422": { $ref: "#/components/responses/CatalogValidation" }
+  /public/display/{roomId}:
+    parameters:
+      - { name: roomId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getRoomDisplay
+      summary: Read anonymous queue tokens for a room
+      responses:
+        "200": { $ref: "#/components/responses/RoomDisplay" }
+        "404": { $ref: "#/components/responses/CatalogNotFound" }
+  /public/pages/{slug}:
+    parameters:
+      - { $ref: "#/components/parameters/Slug" }
+    get:
+      operationId: getPublishedPage
+      summary: Read the published snapshot of a public page
+      responses:
+        "200": { $ref: "#/components/responses/PublishedPage" }
+        "404": { $ref: "#/components/responses/CatalogNotFound" }
+  /appointments:
+    get:
+      operationId: listAppointments
+      summary: List appointments within the caller's role and record scope
+      security: &session [{ ClinicSession: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/From" }
+        - { $ref: "#/components/parameters/To" }
+        - { $ref: "#/components/parameters/DoctorId" }
+        - { $ref: "#/components/parameters/CatalogLimit" }
+        - { name: cursor, in: query, schema: { type: string } }
+      responses:
+        "200": { $ref: "#/components/responses/AppointmentList" }
+        default: &error { $ref: "#/components/responses/WorkflowError" }
+    post:
+      operationId: bookAppointment
+      summary: Reserve a slot atomically as a patient or receptionist
+      security: *session
+      parameters:
+        - &key { $ref: "#/components/parameters/IdempotencyKey" }
+      requestBody: { $ref: "#/components/requestBodies/Booking" }
+      responses:
+        "200": &appointment { $ref: "#/components/responses/Appointment" }
+        "201": *appointment
+        default: *error
+  /appointments/{id}:
+    parameters: &id [{ $ref: "#/components/parameters/ResourceId" }]
+    get:
+      operationId: getAppointment
+      summary: Read an appointment within the caller's scope
+      security: *session
+      responses:
+        "200": *appointment
+        default: *error
+  /appointments/{id}/cancel:
+    parameters: *id
+    post:
+      operationId: cancelAppointment
+      summary: Cancel a confirmed, future appointment
+      security: *session
+      requestBody: &version { $ref: "#/components/requestBodies/ExpectedVersion" }
+      responses:
+        "200": *appointment
+        default: *error
+  /appointments/{id}/reschedule:
+    parameters: *id
+    post:
+      operationId: rescheduleAppointment
+      summary: Atomically move a confirmed appointment to a slot with the same doctor
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/Reschedule" }
+      responses:
+        "200": *appointment
+        default: *error
+  /appointments/walk-in:
+    post:
+      operationId: createWalkIn
+      summary: Create a same-day walk-in appointment at reception
+      security: *session
+      parameters: [*key]
+      requestBody: { $ref: "#/components/requestBodies/WalkIn" }
+      responses:
+        "200": &data { $ref: "#/components/responses/WorkflowData" }
+        "201": *data
+        default: *error
+  /appointments/{id}/check-in:
+    parameters: *id
+    post:
+      operationId: checkInAppointment
+      summary: Check an appointment in at reception and return its unique token
+      security: *session
+      parameters: [*key]
+      responses:
+        "200": &token { $ref: "#/components/responses/QueueToken" }
+        "201": *token
+        default: *error
+  /patients:
+    get:
+      operationId: searchPatients
+      summary: Search front-desk demographics by MRN, phone or name
+      security: *session
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2, maxLength: 120 } }
+      responses:
+        "200": *data
+        default: *error
+    post:
+      operationId: registerPatient
+      summary: Register a patient record at reception
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/PatientRegistration" }
+      responses:
+        "201": *data
+        default: *error
+  /patients/{id}/history:
+    parameters: *id
+    get:
+      operationId: getPatientHistory
+      summary: Read released own summaries or the clinical history for an authorized doctor
+      security: *session
+      responses:
+        "200": { $ref: "#/components/responses/PatientHistory" }
+        default: *error
+  /patients/{id}/allergies:
+    parameters: *id
+    put:
+      operationId: recordAllergies
+      summary: Record allergy status within an authorized care relationship
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/Allergies" }
+      responses:
+        "200": *data
+        default: *error
+  /queue:
+    get:
+      operationId: listQueue
+      summary: List the same-day queue at reception or the doctor's own queue
+      security: *session
+      parameters:
+        - { $ref: "#/components/parameters/Date" }
+        - { $ref: "#/components/parameters/DoctorId" }
+      responses:
+        "200": { $ref: "#/components/responses/QueueList" }
+        default: *error
+  /queue/{id}/call:
+    parameters: *id
+    post:
+      operationId: callQueueToken
+      summary: Call a waiting token
+      security: *session
+      requestBody: *version
+      responses:
+        "200": *token
+        default: *error
+  /queue/{id}/skip:
+    parameters: *id
+    post:
+      operationId: skipQueueToken
+      summary: Skip a waiting or called token with a reason
+      security: *session
+      requestBody: &queueReason { $ref: "#/components/requestBodies/QueueReason" }
+      responses:
+        "200": *token
+        default: *error
+  /queue/{id}/return:
+    parameters: *id
+    post:
+      operationId: returnQueueToken
+      summary: Return a skipped token to the queue
+      security: *session
+      requestBody: *queueReason
+      responses:
+        "200": *token
+        default: *error
+  /queue/{id}/start:
+    parameters: *id
+    post:
+      operationId: startEncounter
+      summary: Start an encounter for the assigned doctor
+      security: *session
+      requestBody: *version
+      responses:
+        "201": &encounter { $ref: "#/components/responses/Encounter" }
+        default: *error
+  /encounters/{id}:
+    parameters: *id
+    get:
+      operationId: getEncounter
+      summary: Read the assigned doctor's encounter and amendments
+      security: *session
+      responses:
+        "200": *encounter
+        default: *error
+    patch:
+      operationId: saveEncounterDraft
+      summary: Replace the notes of a versioned encounter draft
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/EncounterDraft" }
+      responses:
+        "200": *encounter
+        default: *error
+  /encounters/{id}/finalize:
+    parameters: *id
+    post:
+      operationId: finalizeEncounter
+      summary: Finalize a draft with an assessment and complete the visit and queue token
+      security: *session
+      requestBody: *version
+      responses:
+        "200": *encounter
+        default: *error
+  /encounters/{id}/amendments:
+    parameters: *id
+    post:
+      operationId: appendEncounterAmendment
+      summary: Append a correction to the finalized encounter
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/EncounterAmendment" }
+      responses:
+        "201": *data
+        default: *error
+  /encounters/{id}/release:
+    parameters: *id
+    post:
+      operationId: releaseEncounterSummary
+      summary: Release a separate patient-facing summary after finalization
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/EncounterRelease" }
+      responses:
+        "201": *data
+        default: *error
+  /prescriptions:
+    get:
+      operationId: listPrescriptions
+      summary: List the doctor's prescriptions or the patient's explicitly released prescriptions
+      security: *session
+      responses:
+        "200": { $ref: "#/components/responses/PrescriptionList" }
+        default: *error
+    post:
+      operationId: createPrescriptionDraft
+      summary: Start a prescription draft for an assigned encounter
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/PrescriptionDraft" }
+      responses:
+        "201": *data
+        default: *error
+  /prescriptions/{id}:
+    parameters: *id
+    get:
+      operationId: getPrescription
+      summary: Read a prescription within the caller's scope
+      security: *session
+      responses:
+        "200": { $ref: "#/components/responses/Prescription" }
+        default: *error
+    patch:
+      operationId: savePrescriptionDraft
+      summary: Replace the items of a versioned prescription draft
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/PrescriptionEdit" }
+      responses:
+        "200": *data
+        default: *error
+  /prescriptions/{id}/approve:
+    parameters: *id
+    post:
+      operationId: approvePrescription
+      summary: Freeze a prescription version as the authoring doctor
+      security: *session
+      parameters: [*key]
+      requestBody: *version
+      responses:
+        "200": *data
+        default: *error
+  /prescriptions/{id}/amendments:
+    parameters: *id
+    post:
+      operationId: amendPrescription
+      summary: Start a replacement draft for an approved prescription
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/PrescriptionAmendment" }
+      responses:
+        "201": *data
+        default: *error
+  /prescriptions/{id}/release:
+    parameters: *id
+    post:
+      operationId: releasePrescription
+      summary: Release an approved prescription after the encounter is finalized
+      security: *session
+      responses:
+        "200": *data
+        "201": *data
+        default: *error
+  /prescriptions/{id}/pdf:
+    parameters: *id
+    get:
+      operationId: downloadPrescription
+      summary: Download an approved and authorized prescription PDF
+      security: *session
+      responses:
+        "200": &pdf { $ref: "#/components/responses/PrivatePdf" }
+        default: *error
+  /invoices:
+    get:
+      operationId: listInvoices
+      summary: List own patient invoices or receptionist/admin invoices
+      security: *session
+      responses:
+        "200": { $ref: "#/components/responses/InvoiceList" }
+        default: *error
+    post:
+      operationId: createInvoice
+      summary: Create or return the appointment's consultation invoice
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/CreateInvoice" }
+      responses:
+        "200": &invoice { $ref: "#/components/responses/Invoice" }
+        "201": *invoice
+        default: *error
+  /invoices/{id}:
+    parameters: *id
+    get:
+      operationId: getInvoice
+      summary: Read an invoice and its receipt references within the caller's scope
+      security: *session
+      responses:
+        "200": *invoice
+        default: *error
+  /invoices/{id}/payments:
+    parameters: *id
+    post:
+      operationId: recordPayment
+      summary: Record a verified payment within the outstanding balance
+      security: *session
+      parameters: [*key]
+      requestBody: { $ref: "#/components/requestBodies/Payment" }
+      responses:
+        "200": &payment { $ref: "#/components/responses/Payment" }
+        "201": *payment
+        default: *error
+  /payments/{id}/refunds:
+    parameters: *id
+    post:
+      operationId: recordRefund
+      summary: Record a refund as an administrator
+      security: *session
+      parameters: [*key]
+      requestBody: { $ref: "#/components/requestBodies/Refund" }
+      responses:
+        "200": *data
+        "201": *data
+        default: *error
+  /receipts/{id}/pdf:
+    parameters: *id
+    get:
+      operationId: downloadReceipt
+      summary: Download a receipt within the caller's scope
+      security: *session
+      responses:
+        "200": *pdf
+        default: *error
+  /billing/collections:
+    get:
+      operationId: getDailyCollections
+      summary: Read payments and refunds by method for one Karachi business date
+      security: *session
+      parameters:
+        - { $ref: "#/components/parameters/Date" }
+      responses:
+        "200": *data
+        default: *error
+  /admin/accounts:
+    get:
+      operationId: listClinicAccounts
+      summary: List provisioned clinic accounts
+      security: *session
+      responses:
+        "200": *data
+        default: *error
+    post:
+      operationId: provisionClinicAccount
+      summary: Provision a staff account or link a new account to a verified patient
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/Account" }
+      responses:
+        "201": *data
+        default: *error
+  /admin/accounts/{id}:
+    parameters: *id
+    patch:
+      operationId: setAccountActive
+      summary: Activate or deactivate an account and revoke sessions on deactivation
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/AccountActive" }
+      responses:
+        "200": *data
+        default: *error
+  /admin/catalog:
+    get:
+      operationId: getAdminCatalog
+      summary: Read clinic settings and catalog rows including drafts
+      security: *session
+      responses:
+        "200": *data
+        default: *error
+  /admin/clinic:
+    put:
+      operationId: saveClinic
+      summary: Save clinic settings and visibility
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/ClinicEdit" }
+      responses:
+        "200": *data
+        default: *error
+  /admin/departments/{slug}:
+    parameters: &slug [{ $ref: "#/components/parameters/Slug" }]
+    put:
+      operationId: saveDepartment
+      summary: Save a draft or published department
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/DepartmentEdit" }
+      responses:
+        "200": *data
+        default: *error
+  /admin/services/{slug}:
+    parameters: *slug
+    put:
+      operationId: saveService
+      summary: Save a draft or published service and fee
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/ServiceEdit" }
+      responses:
+        "200": *data
+        default: *error
+  /admin/doctors/{id}:
+    parameters: *id
+    put:
+      operationId: saveDoctor
+      summary: Save a draft or published doctor profile and consultation fee
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/DoctorEdit" }
+      responses:
+        "200": *data
+        default: *error
+  /admin/rooms/{id}:
+    parameters: *id
+    put:
+      operationId: saveRoom
+      summary: Save a room and optionally assign a doctor
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/RoomEdit" }
+      responses:
+        "200": *data
+        default: *error
+  /admin/slots:
+    get:
+      operationId: listManagedSlots
+      summary: List slots and reservation flags for a business date
+      security: *session
+      parameters:
+        - { $ref: "#/components/parameters/Date" }
+      responses:
+        "200": *data
+        default: *error
+    post:
+      operationId: createSlot
+      summary: Create a non-overlapping appointment slot
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/CreateSlot" }
+      responses:
+        "201": *data
+        default: *error
+  /admin/slots/{id}:
+    parameters: *id
+    patch:
+      operationId: setSlotAvailability
+      summary: Set a slot's availability without disabling a reservation
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/SlotEnabled" }
+      responses:
+        "200": *data
+        default: *error
+  /admin/content/{slug}:
+    parameters: *slug
+    get:
+      operationId: getContentDraft
+      summary: Read public-site draft content as an administrator
+      security: *session
+      responses:
+        "200": *data
+        default: *error
+    put:
+      operationId: saveContentDraft
+      summary: Create or update a versioned content draft
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/ContentDraft" }
+      responses:
+        "200": *data
+        default: *error
+  /admin/content/{slug}/publish:
+    parameters: *slug
+    post:
+      operationId: publishContent
+      summary: Copy the specified draft version to its public snapshot
+      security: *session
+      requestBody: *version
+      responses:
+        "200": *data
+        default: *error
+  /admin/reports:
+    get:
+      operationId: getAdminReports
+      summary: Read operational totals for an inclusive Karachi business-date range
+      security: *session
+      parameters:
+        - { $ref: "#/components/parameters/From" }
+        - { $ref: "#/components/parameters/To" }
+      responses:
+        "200": { $ref: "#/components/responses/Report" }
+        default: *error
+  /admin/audit-logs:
+    get:
+      operationId: listAuditEvents
+      summary: Read paginated, redacted audit metadata
+      security: *session
+      parameters:
+        - { name: cursor, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200": { $ref: "#/components/responses/AuditList" }
+        default: *error
+  /admin/backup-status:
+    get:
+      operationId: getBackupStatus
+      summary: Read the current backup integration status
+      security: *session
+      responses:
+        "200": *data
+        default: *error
+  /auth/sign-in/email:
+    servers: [{ url: /api }]
+    post:
+      operationId: signIn
+      summary: Start password sign-in and receive a session or staff MFA challenge cookie
+      requestBody: { $ref: "#/components/requestBodies/SignIn" }
+      responses:
+        "200":
+          description: Sign-in result or two-factor challenge.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  twoFactorRedirect: { type: boolean }
+                  redirect: { type: boolean }
+                  user: { $ref: "#/components/schemas/AuthUser" }
+        default: &authError { $ref: "#/components/responses/AuthOperationError" }
+  /auth/sign-out:
+    servers: [{ url: /api }]
+    post:
+      operationId: signOut
+      summary: End the current session
+      security: *session
+      responses:
+        "200":
+          description: Successful sign-out.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success: { type: boolean }
+        default: *authError
+  /auth/two-factor/enable:
+    servers: [{ url: /api }]
+    post:
+      operationId: beginMfaEnrollment
+      summary: Obtain private authenticator enrollment details
+      security: *session
+      requestBody: { $ref: "#/components/requestBodies/MfaEnrollment" }
+      responses:
+        "200":
+          description: Sensitive enrollment data. Display only during setup and never log it.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [method, totpURI, backupCodes]
+                properties:
+                  method: { const: totp }
+                  totpURI: { type: string }
+                  backupCodes: { type: array, items: { type: string } }
+        default: *authError
+  /auth/two-factor/verify-totp:
+    servers: [{ url: /api }]
+    post:
+      operationId: verifyMfa
+      summary: Verify an authenticator code with the enrollment or challenge cookie
+      requestBody: { $ref: "#/components/requestBodies/MfaCode" }
+      responses:
+        "200": &mfaResult { $ref: "#/components/responses/MfaResult" }
+        default: *authError
+  /auth/two-factor/verify-backup-code:
+    servers: [{ url: /api }]
+    post:
+      operationId: verifyMfaBackupCode
+      summary: Verify a single-use backup code with the challenge cookie
+      requestBody: { $ref: "#/components/requestBodies/MfaCode" }
+      responses:
+        "200": *mfaResult
+        default: *authError
 components:
   securitySchemes:
     ClinicSession:
@@ -172,6 +794,17 @@ components:
       name: better-auth.session_token
       description: Better Auth session cookie (Secure and __Secure-prefixed on HTTPS). Staff also require MFA.
   parameters:
+    ResourceId: { name: id, in: path, required: true, schema: { type: string } }
+    Slug: { name: slug, in: path, required: true, schema: { $ref: "#/components/schemas/CatalogSlug" } }
+    Date: { name: date, in: query, schema: { type: string, format: date } }
+    From: { name: from, in: query, schema: { type: string, format: date } }
+    To: { name: to, in: query, schema: { type: string, format: date } }
+    DoctorId: { name: doctorId, in: query, schema: { type: string } }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 8, maxLength: 128, pattern: "^[A-Za-z0-9._:-]+$" }
     CatalogCursor:
       name: cursor
       in: query
@@ -188,6 +821,247 @@ components:
       schema:
         $ref: "#/components/schemas/CatalogSlug"
   responses:
+    AuthOperationError:
+      description: Authentication library error or clinic origin/validation error.
+      content:
+        application/json:
+          schema:
+            anyOf:
+              - { $ref: "#/components/schemas/ApiError" }
+              - type: object
+                properties:
+                  code: { type: string }
+                  message: { type: string }
+    MfaResult:
+      description: Authenticator verification completed; session is set in an HttpOnly cookie.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              user: { $ref: "#/components/schemas/AuthUser" }
+    WorkflowData:
+      description: Successful operation.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: {}
+              meta: { type: object, additionalProperties: true }
+    WorkflowError:
+      description: Authentication, role, resource, validation, version or state error.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    Availability:
+      description: Available slots and a flag indicating whether the result cap was reached.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data, meta]
+            properties:
+              data: { type: array, items: { $ref: "#/components/schemas/AvailableSlot" } }
+              meta: &truncated
+                type: object
+                required: [truncated]
+                properties:
+                  truncated: { type: boolean }
+    RoomDisplay:
+      description: Display data with no patient or appointment identifiers.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                type: object
+                required: [room, tokens]
+                properties:
+                  room: { type: string }
+                  tokens:
+                    type: array
+                    items:
+                      type: object
+                      required: [tokenNumber, status]
+                      properties:
+                        tokenNumber: { type: integer }
+                        status: { type: string, enum: [waiting, called, in_consultation] }
+    PublishedPage:
+      description: The public snapshot of a page.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                type: object
+                required: [slug, title, body, publishedAt]
+                properties:
+                  slug: { type: string }
+                  title: { type: string }
+                  body: { type: string }
+                  publishedAt: { type: string, format: date-time }
+    Appointment:
+      description: Appointment within authorized scope.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: { $ref: "#/components/schemas/Appointment" }
+    AppointmentList:
+      description: Appointment page in ascending schedule order.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data, meta]
+            properties:
+              data: { type: array, items: { $ref: "#/components/schemas/Appointment" } }
+              meta: { $ref: "#/components/schemas/CatalogPage" }
+    QueueToken:
+      description: Updated queue token.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: { $ref: "#/components/schemas/QueueToken" }
+    QueueList:
+      description: Authorized staff queue including patient name and MRN.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data, meta]
+            properties:
+              data: { type: array, items: { $ref: "#/components/schemas/QueueRow" } }
+              meta: *truncated
+    Encounter:
+      description: Encounter for the assigned doctor.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: { $ref: "#/components/schemas/Encounter" }
+    PatientHistory:
+      description: The patient's released summaries or a doctor's authorized clinical view.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                oneOf:
+                  - type: array
+                    items: { $ref: "#/components/schemas/ReleasedSummary" }
+                  - type: object
+                    required: [visits, allergies]
+                    properties:
+                      visits: { type: array, items: { $ref: "#/components/schemas/Encounter" } }
+                      allergies: { $ref: "#/components/schemas/AllergyStatus" }
+    Prescription:
+      description: Authorized prescription detail.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: { $ref: "#/components/schemas/Prescription" }
+    PrescriptionList:
+      description: Authorized prescriptions and a flag indicating whether the result cap was reached.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data, meta]
+            properties:
+              data: { type: array, items: { $ref: "#/components/schemas/Prescription" } }
+              meta: *truncated
+    Invoice:
+      description: Consultation invoice, outstanding balance, and receipts on detail reads.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: { $ref: "#/components/schemas/Invoice" }
+    InvoiceList:
+      description: Authorized invoices and a flag indicating whether the result cap was reached.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data, meta]
+            properties:
+              data: { type: array, items: { $ref: "#/components/schemas/Invoice" } }
+              meta: *truncated
+    Payment:
+      description: The committed payment and receipt reference.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: { $ref: "#/components/schemas/Payment" }
+    PrivatePdf:
+      description: An access-controlled PDF that must not be cached.
+      content:
+        application/pdf:
+          schema: { type: string, format: binary }
+    Report:
+      description: Appointment status counts, staff and published doctors, and collection totals.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                type: object
+                required: [appointments, publishedDoctors, activeStaff, grossMinor, refundedMinor, netMinor, currency]
+                properties:
+                  appointments:
+                    type: array
+                    items:
+                      type: object
+                      required: [status, count]
+                      properties:
+                        status: { $ref: "#/components/schemas/AppointmentStatus" }
+                        count: { type: integer }
+                  publishedDoctors: { type: integer }
+                  activeStaff: { type: integer }
+                  grossMinor: { type: integer }
+                  refundedMinor: { type: integer }
+                  netMinor: { type: integer }
+                  currency: { const: PKR }
+    AuditList:
+      description: Newest first audit events with a cursor for older entries.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data, meta]
+            properties:
+              data: { type: array, items: { $ref: "#/components/schemas/AuditEvent" } }
+              meta:
+                type: object
+                required: [nextCursor]
+                properties:
+                  nextCursor: { type: [integer, "null"] }
     AuthRequired:
       description: A valid session is required.
       content:
@@ -218,7 +1092,550 @@ components:
       schema:
         type: string
         format: uuid
+  requestBodies:
+    Booking:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [doctorId, slotId]
+            properties:
+              doctorId: { type: string }
+              slotId: { type: string }
+              patientId: { type: string, description: Required for receptionist bookings. }
+    ExpectedVersion:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [expectedVersion]
+            properties:
+              expectedVersion: &revision { type: integer, minimum: 1 }
+    Reschedule:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [expectedVersion, slotId]
+            properties:
+              expectedVersion: *revision
+              slotId: { type: string }
+    WalkIn:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [doctorId, patientId]
+            properties:
+              doctorId: { type: string }
+              patientId: { type: string }
+    PatientRegistration:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [displayName]
+            properties:
+              displayName: { type: string, minLength: 1, maxLength: 120 }
+              dateOfBirth: { type: [string, "null"], format: date }
+              phone: { type: [string, "null"], pattern: "^\\+92[0-9]{10}$" }
+    Allergies:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [status]
+            properties:
+              status: { type: string, enum: [recorded, none_known] }
+              details: { type: [string, "null"], maxLength: 2000 }
+    QueueReason:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [expectedVersion, reason]
+            properties:
+              expectedVersion: *revision
+              reason: { type: string, minLength: 1, maxLength: 400 }
+    EncounterDraft:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [expectedVersion, notes]
+            properties:
+              expectedVersion: *revision
+              notes: { $ref: "#/components/schemas/Notes" }
+    EncounterAmendment:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [reason, correction]
+            properties:
+              reason: { type: string, minLength: 1, maxLength: 400 }
+              correction: { type: string, minLength: 1, maxLength: 6000 }
+    EncounterRelease:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [summary]
+            properties:
+              summary: { type: string, minLength: 1, maxLength: 6000 }
+    PrescriptionDraft:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [encounterId, items]
+            properties:
+              encounterId: { type: string }
+              items: &items
+                type: array
+                minItems: 1
+                maxItems: 30
+                items: { $ref: "#/components/schemas/PrescriptionItem" }
+    PrescriptionEdit:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [expectedVersion, items]
+            properties:
+              expectedVersion: *revision
+              items: *items
+    PrescriptionAmendment:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [reason, items]
+            properties:
+              reason: { type: string, minLength: 1, maxLength: 400 }
+              items: *items
+    CreateInvoice:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [appointmentId]
+            properties:
+              appointmentId: { type: string }
+    Payment:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [amountMinor, method]
+            properties:
+              amountMinor: &positiveMinor { type: integer, minimum: 1, maximum: 100000000000 }
+              method: { $ref: "#/components/schemas/PaymentMethod" }
+              reference: { type: [string, "null"], minLength: 1, maxLength: 120, description: Required for non-cash payments. }
+              currency: &pkr { type: string, const: PKR }
+    Refund:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [amountMinor, reason]
+            properties:
+              amountMinor: *positiveMinor
+              reason: { type: string, minLength: 1, maxLength: 500 }
+    Account:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [role, name, email, password]
+            properties:
+              role: { type: string, enum: [patient, receptionist, doctor, admin] }
+              name: { type: string, minLength: 1, maxLength: 120 }
+              email: { type: string, format: email, maxLength: 254 }
+              password: &provisionPassword { type: string, format: password, minLength: 12, maxLength: 128 }
+              doctorId: { type: string, description: Required for doctor accounts only. }
+              patientId: { type: string, description: Required for patient accounts only. }
+    AccountActive:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [active]
+            properties:
+              active: { type: boolean }
+    ClinicEdit:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [name, address, published]
+            properties:
+              name: &short { type: string, minLength: 1, maxLength: 120 }
+              address: { type: string, minLength: 1, maxLength: 500 }
+              phone: { type: [string, "null"], maxLength: 40 }
+              hoursSummary: { type: [string, "null"], maxLength: 200 }
+              published: { type: boolean }
+    DepartmentEdit:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [name, published]
+            properties:
+              name: *short
+              published: { type: boolean }
+    ServiceEdit:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [name, departmentSlug, feeMinor, published]
+            properties:
+              name: *short
+              departmentSlug: { $ref: "#/components/schemas/CatalogSlug" }
+              description: { type: [string, "null"], maxLength: 2000 }
+              feeMinor: &fee { type: integer, minimum: 0, maximum: 100000000000 }
+              published: { type: boolean }
+    DoctorEdit:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [slug, displayName, specialty, departmentSlug, feeMinor, published]
+            properties:
+              slug: { $ref: "#/components/schemas/CatalogSlug" }
+              displayName: *short
+              specialty: *short
+              departmentSlug: { $ref: "#/components/schemas/CatalogSlug" }
+              qualifications: { type: [string, "null"], maxLength: 2000 }
+              photoUrl: { type: [string, "null"], format: uri, maxLength: 1000 }
+              feeMinor: *fee
+              published: { type: boolean }
+    RoomEdit:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [name]
+            properties:
+              name: *short
+              doctorId: { type: [string, "null"] }
+    CreateSlot:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [doctorId, startAt, endAt]
+            properties:
+              doctorId: { type: string }
+              startAt: &instant { type: string, format: date-time, description: UTC timestamp with milliseconds and a Z suffix. }
+              endAt: *instant
+    SlotEnabled:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [enabled]
+            properties:
+              enabled: { type: boolean }
+    ContentDraft:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [title, body, expectedVersion]
+            properties:
+              title: *short
+              body: { type: string, minLength: 1, maxLength: 12000 }
+              expectedVersion: { type: integer, minimum: 0, description: Use zero to create a new page. }
+    SignIn:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, password]
+            properties:
+              email: { type: string, format: email }
+              password: *provisionPassword
+    MfaEnrollment:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [password]
+            properties:
+              password: *provisionPassword
+    MfaCode:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [code]
+            properties:
+              code: { type: string }
   schemas:
+    AuthUser:
+      type: object
+      required: [id, name, email, emailVerified]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string, format: email }
+        emailVerified: { type: boolean }
+        twoFactorEnabled: { type: boolean }
+    AppointmentStatus:
+      type: string
+      enum: [confirmed, waiting, in_consultation, completed, cancelled, no_show, left]
+    AvailableSlot:
+      type: object
+      required: [slotId, doctorId, startAt, endAt, feeMinor, currency]
+      properties:
+        slotId: { type: string }
+        doctorId: { type: string }
+        startAt: *instant
+        endAt: *instant
+        feeMinor: { type: integer, minimum: 0 }
+        currency: *pkr
+    Appointment:
+      type: object
+      required: [id, reference, patientId, doctorId, slotId, scheduledAt, feeMinor, currency, status, source, version]
+      properties:
+        id: { type: string }
+        reference: { type: string }
+        patientId: { type: string }
+        doctorId: { type: string }
+        slotId: { type: [string, "null"] }
+        scheduledAt: *instant
+        feeMinor: { type: integer, minimum: 0 }
+        currency: *pkr
+        status: { $ref: "#/components/schemas/AppointmentStatus" }
+        source: { type: string, enum: [online, reception, walk_in] }
+        version: *revision
+    QueueToken:
+      type: object
+      required: [id, appointmentId, doctorId, roomId, localDate, tokenNumber, status, version, arrivedAt, updatedAt]
+      properties:
+        id: { type: string }
+        appointmentId: { type: string }
+        doctorId: { type: string }
+        roomId: { type: [string, "null"] }
+        localDate: { type: string, format: date }
+        tokenNumber: { type: integer }
+        status: { type: string, enum: [waiting, called, skipped, in_consultation, completed, left] }
+        version: *revision
+        arrivedAt: *instant
+        updatedAt: *instant
+    QueueRow:
+      allOf:
+        - { $ref: "#/components/schemas/QueueToken" }
+        - type: object
+          required: [patientName, mrn]
+          properties:
+            patientName: { type: string }
+            mrn: { type: string }
+    Notes:
+      type: object
+      additionalProperties: false
+      properties:
+        reason: &note { type: [string, "null"], maxLength: 5000 }
+        symptoms: *note
+        history: *note
+        exam: *note
+        assessment: *note
+        diagnosis: *note
+        plan: *note
+        followUp: *note
+        vitals:
+          type: object
+          additionalProperties: false
+          properties:
+            temperatureC: { type: [number, "null"], exclusiveMinimum: 0, maximum: 60 }
+            pulseBpm: &reading { type: [number, "null"], exclusiveMinimum: 0, maximum: 400 }
+            systolicMmHg: *reading
+            diastolicMmHg: *reading
+            spo2Percent: { type: [number, "null"], exclusiveMinimum: 0, maximum: 100 }
+    Encounter:
+      type: object
+      required: [id, appointmentId, patientId, doctorId, status, version, notes, createdAt, finalizedAt]
+      properties:
+        id: { type: string }
+        appointmentId: { type: string }
+        patientId: { type: string }
+        doctorId: { type: string }
+        status: { type: string, enum: [draft, finalized] }
+        version: *revision
+        notes: { $ref: "#/components/schemas/Notes" }
+        createdAt: *instant
+        finalizedAt: &optionalInstant { type: [string, "null"], format: date-time }
+        amendments:
+          type: array
+          items:
+            type: object
+            required: [id, reason, correction, authorId, createdAt]
+            properties:
+              id: { type: string }
+              reason: { type: string }
+              correction: { type: string }
+              authorId: { type: string }
+              createdAt: *instant
+        release:
+          type: [object, "null"]
+          properties:
+            releasedAt: *instant
+    ReleasedSummary:
+      type: object
+      required: [encounterId, doctorName, summary, releasedAt]
+      properties:
+        encounterId: { type: string }
+        doctorName: { type: string }
+        summary: { type: string }
+        releasedAt: *instant
+    AllergyStatus:
+      type: object
+      required: [status, details]
+      properties:
+        status: { type: string, enum: [unknown, recorded, none_known] }
+        details: { type: [string, "null"] }
+    PrescriptionItem:
+      type: object
+      additionalProperties: false
+      required: [medicine, dose, frequency]
+      properties:
+        medicine: &itemText { type: string, minLength: 1, maxLength: 300 }
+        strength: *itemText
+        dose: *itemText
+        route: *itemText
+        frequency: *itemText
+        duration: *itemText
+        quantity: *itemText
+        instructions: *itemText
+    Prescription:
+      type: object
+      required: [id, encounterId, supersedesId, version, items, createdAt, approvedAt, releasedAt, doctorName, patientName, status]
+      properties:
+        id: { type: string }
+        encounterId: { type: string }
+        supersedesId: { type: [string, "null"] }
+        version: *revision
+        items: *items
+        createdAt: *instant
+        approvedAt: *optionalInstant
+        releasedAt: *optionalInstant
+        doctorName: { type: string }
+        patientName: { type: string }
+        status: { type: string, enum: [draft, approved, superseded] }
+    Invoice:
+      type: object
+      required: [id, appointmentId, patientId, totalMinor, paidMinor, balanceMinor, createdAt, currency, status, items]
+      properties:
+        id: { type: string }
+        appointmentId: { type: string }
+        patientId: { type: string }
+        totalMinor: &minor { type: integer, minimum: 0 }
+        paidMinor: *minor
+        balanceMinor: *minor
+        createdAt: *instant
+        currency: *pkr
+        status: { type: string, enum: [unpaid, partially_paid, paid] }
+        items:
+          type: array
+          items:
+            type: object
+            required: [label, amountMinor]
+            properties:
+              label: { type: string }
+              amountMinor: *minor
+        receipts:
+          type: array
+          items:
+            type: object
+            required: [receiptId, amountMinor, method, createdAt, refundedMinor]
+            properties:
+              receiptId: { type: string }
+              amountMinor: *minor
+              method: { $ref: "#/components/schemas/PaymentMethod" }
+              createdAt: *instant
+              refundedMinor: *minor
+    PaymentMethod:
+      type: string
+      enum: [cash, bank_transfer, wallet]
+    Payment:
+      type: object
+      required: [id, invoiceId, amountMinor, method, createdAt, receiptId, currency]
+      properties:
+        id: { type: string }
+        invoiceId: { type: string }
+        amountMinor: *minor
+        method: { $ref: "#/components/schemas/PaymentMethod" }
+        createdAt: *instant
+        receiptId: { type: string }
+        currency: *pkr
+    AuditEvent:
+      type: object
+      required: [id, actorId, action, resourceType, resourceId, requestId, createdAt]
+      properties:
+        id: { type: integer }
+        actorId: { type: string }
+        action: { type: string }
+        resourceType: { type: string }
+        resourceId: { type: string }
+        requestId: { type: [string, "null"] }
+        createdAt: *instant
     CatalogSlug:
       type: string
       maxLength: 80

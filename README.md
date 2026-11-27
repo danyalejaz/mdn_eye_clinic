@@ -70,6 +70,28 @@ The audit API returns action and resource metadata, not passwords, drafts or
 clinical notes. Backup status reports `not_configured` until a verified backup
 integration exists. Published website pages use a separate snapshot from drafts.
 
+## API integration
+
+The OpenAPI document covers booking, check-in, queue, clinical records,
+prescriptions, billing, and administration. Portal calls use the same origin
+and cookies; send JSON and the portal `Origin` on mutations. For auth, sign in
+at `/api/auth/sign-in/email`, follow the authenticator challenge for staff,
+then use `/api/v1/me` for the authoritative role and record scope. Pass the
+same `Idempotency-Key` when retrying an identical booking, payment, refund, or
+prescription approval; after a version conflict, reload the resource.
+
+Patients see their own appointments, released summaries and prescriptions,
+and invoice receipts. Reception handles demographics, the queue, and payment
+recording without clinical notes. Doctors can start and finalize their assigned
+encounters; publication to the patient requires separate release actions.
+Administrators manage accounts, catalogs, rooms, and non-overlapping slots,
+and can view totals, issue refunds, and inspect redacted audit events. The
+public queue display returns room name and token state only.
+
+Local PDFs are rendered on demand and require authorization on every request.
+The current English print font returns `DOCUMENT_FONT_UNSUPPORTED` for text
+it cannot render; it never substitutes or drops clinical text.
+
 ## Verify changes
 
 Run `pnpm typecheck`, `pnpm test`, and `pnpm build` from the repository root.
