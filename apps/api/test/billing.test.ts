@@ -32,6 +32,14 @@ it("atomically limits payments and refunds, with scoped receipts and daily total
     data: { totalMinor: 150000, paidMinor: 75000, balanceMinor: 75000, receipts: [{ receiptId: paymentId }] },
   });
   expect((await request(`/api/v1${path}`, { cookie: visit.doctor.cookie })).status).toBe(403);
+  await platform.env.DB.prepare("UPDATE patients SET display_name = 'Updated Patient' WHERE id = ?").bind(visit.patientId).run();
+  const identity = await platform.env.DB.prepare("SELECT patient_name FROM receipt_identity WHERE payment_id = ?").bind(paymentId).first();
+  expect(identity).toEqual({ patient_name: "Fictional Visit Patient" });
+  const events = await request("/api/v1/admin/audit-logs", { cookie: admin.cookie });
+  expect(await events.json()).toMatchObject({ data: expect.arrayContaining([
+    expect.objectContaining({ action: "payment.record", resourceId: paymentId }),
+    expect.objectContaining({ action: "refund.record", resourceId: paymentId }),
+  ]) });
   const receipt = await request(`/api/v1/receipts/${paymentId}/pdf`, { cookie: visit.patientCookie });
   expect(receipt.headers.get("Content-Type")).toBe("application/pdf");
   expect((await receipt.text()).startsWith("%PDF-")).toBe(true);

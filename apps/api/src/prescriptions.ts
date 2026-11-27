@@ -23,13 +23,15 @@ type Prescription = {
 const projection = `
   SELECT p.id, p.encounter_id AS encounterId, p.supersedes_id AS supersedesId,
     p.version, p.items, p.created_at AS createdAt, p.approved_at AS approvedAt,
-    r.released_at AS releasedAt, d.display_name AS doctorName, pt.display_name AS patientName,
+    r.released_at AS releasedAt, COALESCE(s.doctor_name, d.display_name) AS doctorName,
+    COALESCE(s.patient_name, pt.display_name) AS patientName,
     CASE WHEN p.approved_at IS NULL THEN 'draft'
       WHEN EXISTS (SELECT 1 FROM prescriptions x WHERE x.supersedes_id = p.id AND x.approved_at IS NOT NULL)
         THEN 'superseded' ELSE 'approved' END AS status
   FROM prescriptions p JOIN encounters e ON e.id = p.encounter_id
   JOIN doctors d ON d.id = e.doctor_id JOIN patients pt ON pt.id = e.patient_id
-  LEFT JOIN prescription_releases r ON r.prescription_id = p.id`;
+  LEFT JOIN prescription_releases r ON r.prescription_id = p.id
+  LEFT JOIN approved_prescription_identity s ON s.prescription_id = p.id`;
 
 function view(row: Prescription) {
   return { ...row, items: JSON.parse(row.items) as Item[] };

@@ -926,9 +926,10 @@ components:
                     type: array
                     items:
                       type: object
-                      required: [tokenNumber, status]
+                      required: [tokenNumber, displayToken, status]
                       properties:
                         tokenNumber: { type: integer }
+                        displayToken: { type: string, example: T-024 }
                         status: { type: string, enum: [waiting, called, in_consultation] }
     PublishedPage:
       description: The public snapshot of a page.
@@ -1520,7 +1521,7 @@ components:
         version: *revision
     QueueToken:
       type: object
-      required: [id, appointmentId, doctorId, roomId, localDate, tokenNumber, status, version, arrivedAt, updatedAt]
+      required: [id, appointmentId, doctorId, roomId, localDate, tokenNumber, displayToken, status, version, arrivedAt, updatedAt]
       properties:
         id: { type: string }
         appointmentId: { type: string }
@@ -1528,6 +1529,7 @@ components:
         roomId: { type: [string, "null"] }
         localDate: { type: string, format: date }
         tokenNumber: { type: integer }
+        displayToken: { type: string, example: T-024 }
         status: { type: string, enum: [waiting, called, skipped, in_consultation, completed, left] }
         version: *revision
         arrivedAt: *instant

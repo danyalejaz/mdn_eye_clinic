@@ -1,5 +1,5 @@
 import { afterAll, expect, it } from "vitest";
-import { testPlatform } from "./platform";
+import { cookies, password, testPlatform } from "./platform";
 import { startVisit } from "./visit";
 
 let platform: Awaited<ReturnType<typeof testPlatform>>;
@@ -27,6 +27,18 @@ it("keeps prescriptions private until approved and released, with immutable amen
   })).status).toBe(200);
   expect((await visit.post(`/encounters/${visit.encounterId}/finalize`, { expectedVersion: 2 }, cookie)).status).toBe(200);
   expect((await visit.post(`${path}/release`, {}, cookie)).status).toBe(201);
+  await platform.env.DB.batch([
+    platform.env.DB.prepare("UPDATE doctors SET display_name = 'Updated Doctor' WHERE id = 'doc_demo_a'"),
+    platform.env.DB.prepare("UPDATE patients SET display_name = 'Updated Patient' WHERE id = ?").bind(visit.patientId),
+  ]);
+  const ownDetail = await request(`/api/v1${path}`, { cookie: visit.patientCookie });
+  expect(await ownDetail.json()).toMatchObject({
+    data: { doctorName: "Demo Doctor A", patientName: "Fictional Visit Patient" },
+  });
+  const email = "non-owner@example.test";
+  await platform.account(email, "patient");
+  const nonOwner = cookies(await request("/api/auth/sign-in/email", { body: { email, password } }));
+  expect((await request(`/api/v1${path}/pdf`, { cookie: nonOwner })).status).toBe(404);
   const pdf = await request(`/api/v1${path}/pdf`, { cookie: visit.patientCookie });
   expect(pdf.headers.get("Content-Type")).toBe("application/pdf");
   expect((await pdf.text()).slice(0, 5)).toBe("%PDF-");

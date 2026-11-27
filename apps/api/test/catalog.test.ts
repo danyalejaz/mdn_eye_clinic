@@ -8,7 +8,7 @@ describe("public clinic catalog with local D1", () => {
   let platform: Awaited<ReturnType<typeof getPlatformProxy<Pick<Env, "DB">>>>;
 
   beforeAll(async () => {
-    platform = await getPlatformProxy({ configPath: "wrangler.jsonc", persist: false });
+    platform = await getPlatformProxy({ configPath: "wrangler.jsonc", persist: false, remoteBindings: false });
 
     for (const path of [
       "../../../packages/database/migrations/0001_public_catalog.sql",

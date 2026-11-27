@@ -154,8 +154,8 @@ billing.get("/receipts/:id/pdf", requireActor, reader, async (c) => {
   const actor = c.get("actor");
   const row = await c.env.DB.prepare(`
     SELECT p.id, p.invoice_id AS invoiceId, p.amount_minor AS amountMinor, p.method,
-      p.created_at AS createdAt, pt.display_name AS patientName
-    FROM payments p JOIN invoices i ON i.id = p.invoice_id JOIN patients pt ON pt.id = i.patient_id
+      p.created_at AS createdAt, r.patient_name AS patientName
+    FROM payments p JOIN invoices i ON i.id = p.invoice_id JOIN receipt_identity r ON r.payment_id = p.id
     WHERE p.id = ?1 AND (?2 != 'patient' OR i.patient_id = ?3)
   `).bind(c.req.param("id"), actor.role, actor.patientId).first<Payment & { patientName: string }>();
   if (!row) return c.notFound();

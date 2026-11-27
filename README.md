@@ -86,7 +86,9 @@ recording without clinical notes. Doctors can start and finalize their assigned
 encounters; publication to the patient requires separate release actions.
 Administrators manage accounts, catalogs, rooms, and non-overlapping slots,
 and can view totals, issue refunds, and inspect redacted audit events. The
-public queue display returns room name and token state only.
+public queue display returns room name and token state only. Display the
+`displayToken` on both staff and waiting-room screens; it is unique for that
+Karachi business date even when doctors share a room.
 
 The patient notification feed includes booking changes and release notices.
 It also displays a reminder during the 48 hours before a confirmed slot;
@@ -94,6 +96,7 @@ cancelled or rescheduled visits stop showing the old reminder. These notices
 are in-app only and contain no clinical message text.
 
 Local PDFs are rendered on demand and require authorization on every request.
+Issued prescriptions and receipts retain the names recorded at approval or payment.
 The current English print font returns `DOCUMENT_FONT_UNSUPPORTED` for text
 it cannot render; it never substitutes or drops clinical text.
 

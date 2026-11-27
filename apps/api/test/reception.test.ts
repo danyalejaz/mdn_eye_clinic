@@ -35,5 +35,16 @@ it("registers a walk-in, checks in once, and exposes only anonymous room tokens"
   expect((await post(`/queue/${queueId}/call`, { expectedVersion: 1 })).status).toBe(200);
   expect((await post(`/queue/${queueId}/skip`, { expectedVersion: 1, reason: "Sample reason" })).status).toBe(409);
   const display = await request(`${api}/public/display/room-a`);
-  expect(await display.json()).toEqual({ data: { room: "Room A", tokens: [{ tokenNumber: 1, status: "called" }] } });
+  expect(await display.json()).toEqual({ data: { room: "Room A", tokens: [{ tokenNumber: 1, displayToken: "T-001", status: "called" }] } });
+  await env.DB.prepare("INSERT INTO doctor_rooms VALUES ('doc_demo_b', 'room-a')").run();
+  const two = await post("/appointments/walk-in", { patientId, doctorId: "doc_demo_b" }, "walkin-002");
+  const { data: second } = await two.json<{ data: { id: string } }>();
+  const arrived = await post(`/appointments/${second.id}/check-in`, {}, "checkin-002");
+  expect(await arrived.json()).toMatchObject({ data: { displayToken: "T-002", tokenNumber: 1 } });
+  expect(await (await request(`${api}/public/display/room-a`)).json()).toEqual({
+    data: { room: "Room A", tokens: [
+      { tokenNumber: 1, displayToken: "T-001", status: "called" },
+      { tokenNumber: 1, displayToken: "T-002", status: "waiting" },
+    ] },
+  });
 }, 15_000);

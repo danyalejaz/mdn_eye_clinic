@@ -29,17 +29,21 @@ it("protects patient scope, confirms only one concurrent booking, and preserves 
     cookie, headers: { "Idempotency-Key": key }, body: { doctorId: "doc_demo_a", slotId, patientId },
   });
   expect((await book(first, "denied-001", "slot_a", "patient_b")).status).toBe(404);
-  const races = await Promise.all([
-    book(first, "booking-001", "slot_a"),
-    book(second, "booking-002", "slot_a"),
-  ]);
-  expect(races.map((r) => r.status).sort()).toEqual([201, 409]);
+  const attempts = Array.from({ length: 20 }, (_, index) => ({
+    cookie: index % 2 === 0 ? first : second,
+    key: `booking-race-${index}`,
+  }));
+  const races = await Promise.all(attempts.map(({ cookie, key }) => book(cookie, key, "slot_a")));
+  expect(races.filter((response) => response.status === 201)).toHaveLength(1);
+  expect(races.filter((response) => response.status === 409)).toHaveLength(19);
   const winner = races.findIndex((result) => result.status === 201);
   const booking = await races[winner].json<{ data: { id: string; slotId: string } }>();
-  const [own, other] = winner === 0 ? [first, second] : [second, first];
-  expect((await book(own, winner === 0 ? "booking-001" : "booking-002", "slot_a")).status).toBe(200);
+  const [own, other] = winner % 2 === 0 ? [first, second] : [second, first];
+  expect((await book(own, attempts[winner].key, "slot_a")).status).toBe(200);
   expect((await request(`${appointmentPath}/${booking.data.id}`, { cookie: other })).status).toBe(404);
-  expect((await book(other, "booking-003", "slot_b")).status).toBe(201);
+  const secondBooking = await book(other, "booking-003", "slot_b");
+  expect(secondBooking.status).toBe(201);
+  const { data: occupied } = await secondBooking.json<{ data: { id: string } }>();
   const failed = await request(`${appointmentPath}/${booking.data.id}/reschedule`, {
     cookie: own, body: { slotId: "slot_b", expectedVersion: 1 },
   });
@@ -70,4 +74,14 @@ it("protects patient scope, confirms only one concurrent booking, and preserves 
   expect((await noShow(reception.cookie, "past-appointment")).status).toBe(200);
   expect(await (await request(`${appointmentPath}/past-appointment`, { cookie: own })).json())
     .toMatchObject({ data: { status: "no_show", version: 2 } });
+  const cancel = (id: string, cookie: string) => request(`${appointmentPath}/${id}/cancel`, {
+    cookie, body: { expectedVersion: 1 },
+  });
+  expect((await cancel(occupied.id, own)).status).toBe(404);
+  expect((await cancel(occupied.id, other)).status).toBe(200);
+  const moved = await request(`${appointmentPath}/${booking.data.id}/reschedule`, {
+    cookie: own, body: { slotId: "slot_b", expectedVersion: 1 },
+  });
+  expect(await moved.json()).toMatchObject({ data: { slotId: "slot_b", version: 2 } });
+  expect(await (await availability("")).json()).toMatchObject({ data: [{ slotId: "slot_a" }] });
 }, 15_000);

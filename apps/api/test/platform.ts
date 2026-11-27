@@ -8,7 +8,9 @@ export const origin = "http://localhost:8787";
 export const password = "fictional-test-only-password";
 
 export async function testPlatform(fixtures: string[] = []) {
-  const platform = await getPlatformProxy<Pick<Env, "DB">>({ configPath: "wrangler.jsonc", persist: false });
+  const platform = await getPlatformProxy<Pick<Env, "DB">>({
+    configPath: "wrangler.jsonc", persist: false, remoteBindings: false,
+  });
   const env: ApiEnv["Bindings"] = {
     ...platform.env, AUTH_BASE_URL: origin, BETTER_AUTH_SECRET: crypto.randomUUID() + crypto.randomUUID(),
   };

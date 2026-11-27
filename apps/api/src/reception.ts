@@ -8,6 +8,7 @@ const day = 86_400_000;
 const queueColumns = `id, appointment_id AS appointmentId, doctor_id AS doctorId,
   room_id AS roomId, local_date AS localDate, token_number AS tokenNumber, status, version,
   arrived_at AS arrivedAt, updated_at AS updatedAt`;
+const displayToken = "printf('T-%03d', dn.display_number)";
 const patientColumns = `id, mrn, display_name AS displayName, date_of_birth AS dateOfBirth, phone`;
 
 reception.get("/patients", requireActor, frontDesk, async (c) => {
@@ -75,13 +76,13 @@ reception.post("/appointments/:id/check-in", requireActor, frontDesk, async (c) 
       ?3, ?3, ?4
     FROM appointments a LEFT JOIN doctor_rooms r ON r.doctor_id = a.doctor_id
     WHERE a.id = ?5 AND a.status = 'confirmed' AND a.scheduled_at >= ?6 AND a.scheduled_at < ?7
-    ON CONFLICT(appointment_id) DO NOTHING RETURNING ${queueColumns}
+    ON CONFLICT(appointment_id) DO NOTHING RETURNING id
   `).bind(crypto.randomUUID(), localDate, now.toISOString(), c.get("actor").userId, appointmentId,
     new Date(from).toISOString(), new Date(from + day).toISOString()).first();
-  if (created) return c.json({ data: created }, 201);
-  const existing = await db.prepare(`SELECT ${queueColumns} FROM queue_tokens WHERE appointment_id = ?`)
-    .bind(appointmentId).first();
-  if (existing) return c.json({ data: existing });
+  const existing = await db.prepare(`SELECT q.*, ${displayToken} AS displayToken FROM (
+      SELECT ${queueColumns} FROM queue_tokens WHERE appointment_id = ?
+    ) q JOIN queue_display_numbers dn ON dn.queue_id = q.id`).bind(appointmentId).first();
+  if (existing) return c.json({ data: existing }, created ? 201 : 200);
   const appointment = await db.prepare("SELECT id FROM appointments WHERE id = ?").bind(appointmentId).first();
   return appointment ? conflict(c) : c.notFound();
 });
@@ -95,8 +96,9 @@ reception.get("/queue", requireActor, requireRole("receptionist", "doctor"), asy
     SELECT q.id, q.appointment_id AS appointmentId, q.doctor_id AS doctorId,
       q.room_id AS roomId, q.local_date AS localDate, q.token_number AS tokenNumber,
       q.status, q.version, q.arrived_at AS arrivedAt, q.updated_at AS updatedAt,
-      p.display_name AS patientName, p.mrn
+      ${displayToken} AS displayToken, p.display_name AS patientName, p.mrn
     FROM queue_tokens q JOIN appointments a ON a.id = q.appointment_id JOIN patients p ON p.id = a.patient_id
+    JOIN queue_display_numbers dn ON dn.queue_id = q.id
     WHERE q.local_date = ?1 AND (?2 IS NULL OR q.doctor_id = ?2)
     ORDER BY q.doctor_id, q.token_number LIMIT 501
   `).bind(date, doctorId).all();
@@ -122,7 +124,8 @@ reception.post("/queue/:id/:action{call|skip|return}", requireActor, requireRole
         SELECT 1 FROM queue_tokens active WHERE active.doctor_id = queue_tokens.doctor_id
           AND active.status = 'in_consultation'
       ))
-    RETURNING ${queueColumns}
+    RETURNING ${queueColumns},
+      (SELECT ${displayToken} FROM queue_display_numbers dn WHERE dn.queue_id = queue_tokens.id) AS displayToken
   `).bind(status, new Date().toISOString(), actor.userId, action === "call" ? null : body.reason,
     queueId, actor.role, actor.doctorId, businessDay(), body.expectedVersion, current).first();
   if (updated) return c.json({ data: updated });
@@ -137,9 +140,10 @@ reception.get("/public/display/:roomId", async (c) => {
   const room = await db.prepare("SELECT name FROM rooms WHERE id = ?").bind(roomId).first<{ name: string }>();
   if (!room) return c.notFound();
   const { results } = await db.prepare(`
-    SELECT token_number AS tokenNumber, status FROM queue_tokens
-    WHERE room_id = ? AND local_date = ? AND status IN ('called', 'in_consultation', 'waiting')
-    ORDER BY status = 'waiting', token_number LIMIT 10
+    SELECT q.token_number AS tokenNumber, ${displayToken} AS displayToken, q.status
+    FROM queue_tokens q JOIN queue_display_numbers dn ON dn.queue_id = q.id
+    WHERE q.room_id = ? AND q.local_date = ? AND q.status IN ('called', 'in_consultation', 'waiting')
+    ORDER BY q.status = 'waiting', dn.display_number LIMIT 10
   `).bind(roomId, businessDay()).all();
   return c.json({ data: { room: room.name, tokens: results } });
 });
