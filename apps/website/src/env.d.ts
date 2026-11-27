@@ -2,6 +2,8 @@
 
 interface ImportMetaEnv {
   readonly PUBLIC_PORTAL_URL?: string;
+  readonly PUBLIC_API_URL?: string;
+  readonly API_URL?: string;
 }
 
 interface ImportMeta {

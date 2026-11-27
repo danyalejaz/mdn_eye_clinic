@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
+import { cors } from "hono/cors";
 import { appointments, availability } from "./appointments";
 import { clinical } from "./clinical";
 import { publicCatalog } from "./public-catalog";
@@ -7,6 +8,17 @@ import { handleAuth, requireActor, type ApiEnv } from "./identity";
 import { reception } from "./reception";
 
 const app = new Hono<ApiEnv>();
+
+function allowedOrigins(env: ApiEnv["Bindings"] | undefined) {
+  return [env?.AUTH_BASE_URL, env?.WEBSITE_ORIGIN].flatMap((value) => {
+    if (!value) return [];
+    try {
+      return [new URL(value).origin];
+    } catch {
+      return [];
+    }
+  });
+}
 
 app.use("*", async (c, next) => {
   const requestId = crypto.randomUUID();
@@ -18,6 +30,16 @@ app.use("*", async (c, next) => {
 });
 
 app.get("/api/v1/health", (c) => c.json({ data: { status: "ok" } }));
+app.use("/api/*", async (c, next) => {
+  const allowed = allowedOrigins(c.env);
+  return cors({
+    origin: (requestOrigin) => (allowed.includes(requestOrigin) ? requestOrigin : null),
+    credentials: true,
+    allowMethods: ["GET", "HEAD", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Idempotency-Key"],
+    maxAge: 600,
+  })(c, next);
+});
 app.use("/api/*", bodyLimit({
   maxSize: 64 * 1024,
   onError: (c) => c.json({ error: { code: "PAYLOAD_TOO_LARGE", message: "Request body is too large." },

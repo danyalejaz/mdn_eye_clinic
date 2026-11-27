@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { describe, expect, it, vi } from "vitest";
 import app from "../src/index";
 
@@ -34,6 +35,25 @@ describe("API foundation", () => {
       });
     },
   );
+
+  it("documents appointment, reception, and encounter routes", async () => {
+    const spec = await readFile(new URL("../../../contracts/openapi.yaml", import.meta.url), "utf8");
+    for (const path of [
+      "/public/availability:",
+      "/appointments:",
+      "/appointments/walk-in:",
+      "/appointments/{id}/cancel:",
+      "/appointments/{id}/check-in:",
+      "/queue/{id}/start:",
+      "/encounters/{id}:",
+      "/encounters/{id}/finalize:",
+      "/encounters/{id}/release:",
+      "/patients/{id}/history:",
+      "/patients/{id}/allergies:",
+    ]) {
+      expect(spec).toContain(path);
+    }
+  });
 
   it("keeps unexpected exception details out of responses and logs", async () => {
     const logger = vi.spyOn(console, "error").mockImplementation(() => {});

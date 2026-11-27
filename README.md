@@ -63,9 +63,8 @@ The build bundles the Worker with Wrangler's dry-run mode for local verification
 
 ## Frontend
 
-`apps/website` is the public Astro site and `apps/portal` is the React role portal.
-Shared visual tokens live in `packages/ui`. These screens use fictional demo records
-and the placeholder “Clinic Name”. They do not reserve appointments or read clinical data.
+`apps/website` is the public clinic site. `apps/portal` is patient sign-in and appointment booking.
+Shared visual tokens live in `packages/ui`. The site reads the published catalog. Booking confirms a slot through the API.
 
 ```sh
 pnpm dev:website

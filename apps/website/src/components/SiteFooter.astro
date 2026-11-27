@@ -1,45 +1,46 @@
 ---
 interface Props {
   portalUrl: string;
+  clinicName: string;
+  phone: string | null;
+  hours: string;
+  address: string;
+  services: string[];
 }
-const { portalUrl } = Astro.props;
+
+const { portalUrl, clinicName, phone, hours, address, services } = Astro.props;
 ---
 
-<footer class="bg-teal-dark text-on-primary">
-  <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-3xl grid grid-cols-1 md:grid-cols-12 gap-2xl">
-    <div class="md:col-span-4 flex flex-col gap-md">
-      <span class="font-editorial text-section-title text-on-primary">Clinic Name</span>
-      <p class="font-body text-body-sm text-sage max-w-xs">
-        Outpatient medical clinic in Mardan, Pakistan. Scheduled consultations only — not an emergency service.
-      </p>
-      <p class="font-body text-body-sm text-sage-accent tabular-nums">+92 300 0000001 · contact@clinic.example.test</p>
+<footer class="bg-night text-on-primary mt-auto">
+  <div class="max-w-editorial mx-auto px-lg lg:px-4xl pt-4xl pb-3xl flex flex-col lg:flex-row lg:items-end justify-between gap-xl border-b border-white/10">
+    <h2 class="font-editorial text-[clamp(2.4rem,4vw,3.8rem)] leading-[1.02] tracking-[-0.03em] max-w-[16ch]">Choose an hour. Then make it yours.</h2>
+    <a href="#book" class="btn-ink bg-surface text-editorial-ink hover:bg-gold hover:text-night shrink-0">Check open times</a>
+  </div>
+  <div class="max-w-editorial mx-auto px-lg lg:px-4xl py-3xl grid grid-cols-1 md:grid-cols-12 gap-2xl">
+    <div class="md:col-span-5 flex flex-col gap-md">
+      <p class="font-editorial text-[1.7rem] leading-none tracking-[-0.03em]">{clinicName}</p>
+      <p class="text-white/70 max-w-[24rem] text-[15px] leading-relaxed">{address}</p>
+      <p class="text-[15px] tabular-nums text-gold">{hours}{phone ? ` · ${phone}` : ""}</p>
     </div>
-    <div class="md:col-span-2 flex flex-col gap-xs">
-      <span class="font-label text-label-md text-on-primary pb-xs">Navigation</span>
-      <a href="/" class="font-body text-body-sm text-sage hover:text-on-primary">Home</a>
-      <a href="#about" class="font-body text-body-sm text-sage hover:text-on-primary">About</a>
-      <a href="#doctors" class="font-body text-body-sm text-sage hover:text-on-primary">Doctors</a>
-      <a href="#contact" class="font-body text-body-sm text-sage hover:text-on-primary">Contact</a>
+    <div class="md:col-span-3 flex flex-col gap-sm text-[15px]">
+      <span class="kicker">On this page</span>
+      <a href="#care" class="hover:text-gold">Care</a>
+      <a href="#doctors" class="hover:text-gold">Doctors</a>
+      <a href="#visit" class="hover:text-gold">Visit</a>
+      <a href="#questions" class="hover:text-gold">Questions</a>
     </div>
-    <div class="md:col-span-3 flex flex-col gap-xs">
-      <span class="font-label text-label-md text-on-primary pb-xs">Medical services</span>
-      <a href="#services" class="font-body text-body-sm text-sage hover:text-on-primary">General Medicine</a>
-      <a href="#services" class="font-body text-body-sm text-sage hover:text-on-primary">Specialist Consultations</a>
-      <a href="#services" class="font-body text-body-sm text-sage hover:text-on-primary">Preventive Healthcare</a>
-      <a href="#services" class="font-body text-body-sm text-sage hover:text-on-primary">Follow-up Care</a>
-    </div>
-    <div class="md:col-span-3 flex flex-col gap-xs">
-      <span class="font-label text-label-md text-on-primary pb-xs">Patient resources</span>
-      <a href={`${portalUrl}/patient`} class="font-body text-body-sm text-sage hover:text-on-primary">Patient portal</a>
-      <a href="#faq" class="font-body text-body-sm text-sage hover:text-on-primary">Frequently asked questions</a>
-      <a href="#privacy" class="font-body text-body-sm text-sage hover:text-on-primary">Privacy policy</a>
-      <a href="#terms" class="font-body text-body-sm text-sage hover:text-on-primary">Terms &amp; conditions</a>
+    <div class="md:col-span-4 flex flex-col gap-sm text-[15px]">
+      <span class="kicker">Published services</span>
+      {services.length === 0 ? <span class="text-white/60">Services appear when the clinic publishes them.</span> : services.map((service) => (
+        <a href="#care" class="hover:text-gold">{service}</a>
+      ))}
+      <a href={`${portalUrl}/sign-in`} class="pt-sm text-gold hover:text-on-primary">Sign in to book</a>
     </div>
   </div>
-  <div class="border-t border-primary">
-    <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-lg flex flex-col sm:flex-row items-center justify-between gap-md font-caption text-caption text-sage-accent">
-      <span>© 2026 Clinic Name. Provisional branding pending clinic approval.</span>
-      <span class="tabular-nums">Mon–Sat · 9:00 AM – 8:00 PM · Asia/Karachi</span>
+  <div class="border-t border-white/10">
+    <div class="max-w-editorial mx-auto px-lg lg:px-4xl py-lg flex flex-col sm:flex-row justify-between gap-sm text-[13px] text-white/55">
+      <span>© {new Date().getFullYear()} {clinicName}</span>
+      <span>Scheduled outpatient visits · Not an emergency service · Asia/Karachi</span>
     </div>
   </div>
 </footer>

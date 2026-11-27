@@ -1,9 +1,8 @@
-import { createRootRoute, createRoute, createRouter, Outlet } from "@tanstack/react-router";
-import { AdminDashboard } from "./pages/AdminDashboard";
-import { DoctorDashboard } from "./pages/DoctorDashboard";
+import { createRootRoute, createRoute, createRouter, Outlet, redirect } from "@tanstack/react-router";
 import { PatientDashboard } from "./pages/PatientDashboard";
 import { PortalHome } from "./pages/PortalHome";
-import { ReceptionDashboard } from "./pages/ReceptionDashboard";
+import { SignIn } from "./pages/SignIn";
+import { loadSession } from "./session";
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -12,34 +11,47 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
+  beforeLoad: async () => {
+    const session = await loadSession();
+    if (session.state === "ready" && session.actor.role === "patient") {
+      throw redirect({ to: "/patient", search: { doctorId: "", slotId: "" } });
+    }
+  },
   component: PortalHome,
+});
+
+const signInRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/sign-in",
+  beforeLoad: async () => {
+    const session = await loadSession();
+    if (session.state === "ready" && session.actor.role === "patient") {
+      throw redirect({ to: "/patient", search: { doctorId: "", slotId: "" } });
+    }
+  },
+  component: SignIn,
 });
 
 const patientRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/patient",
-  component: PatientDashboard,
+  validateSearch: (search: Record<string, unknown>) => ({
+    doctorId: typeof search.doctorId === "string" ? search.doctorId : "",
+    slotId: typeof search.slotId === "string" ? search.slotId : "",
+  }),
+  beforeLoad: async () => {
+    const session = await loadSession();
+    if (session.state !== "ready") throw redirect({ to: "/sign-in" });
+    return { actor: session.actor };
+  },
+  component: function BookingScreen() {
+    const { actor } = patientRoute.useRouteContext();
+    const { doctorId, slotId } = patientRoute.useSearch();
+    return <PatientDashboard actor={actor} doctorId={doctorId} slotId={slotId} />;
+  },
 });
 
-const receptionRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/reception",
-  component: ReceptionDashboard,
-});
-
-const doctorRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/doctor",
-  component: DoctorDashboard,
-});
-
-const adminRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/admin",
-  component: AdminDashboard,
-});
-
-const routeTree = rootRoute.addChildren([indexRoute, patientRoute, receptionRoute, doctorRoute, adminRoute]);
+const routeTree = rootRoute.addChildren([indexRoute, signInRoute, patientRoute]);
 
 export const router = createRouter({ routeTree });
 

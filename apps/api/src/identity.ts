@@ -5,7 +5,7 @@ import type { Context, MiddlewareHandler } from "hono";
 export type Role = "patient" | "receptionist" | "doctor" | "admin";
 export type Actor = { userId: string; role: Role; doctorId: string | null; patientId: string | null };
 export type ApiEnv = {
-  Bindings: Pick<Env, "DB"> & { AUTH_BASE_URL?: string; BETTER_AUTH_SECRET?: string };
+  Bindings: Pick<Env, "DB"> & { AUTH_BASE_URL?: string; BETTER_AUTH_SECRET?: string; WEBSITE_ORIGIN?: string };
   Variables: { requestId: string; actor: Actor };
 };
 

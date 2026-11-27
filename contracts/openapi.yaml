@@ -164,6 +164,758 @@ paths:
                     $ref: "#/components/schemas/CatalogPage"
         "422":
           $ref: "#/components/responses/CatalogValidation"
+  /public/availability:
+    get:
+      operationId: listPublicAvailability
+      summary: List open appointment slots
+      description: Inclusive business dates in Asia/Karachi. Omitting both dates searches the current business day. The window cannot exceed 30 days.
+      parameters:
+        - name: from
+          in: query
+          schema: { $ref: "#/components/schemas/BusinessDate" }
+        - name: to
+          in: query
+          schema: { $ref: "#/components/schemas/BusinessDate" }
+        - name: doctorId
+          in: query
+          schema: { $ref: "#/components/schemas/ResourceId" }
+      responses:
+        "200":
+          description: Open slots in ascending start time, at most 500.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/OpenSlot" }
+                  meta:
+                    type: object
+                    required: [truncated]
+                    properties:
+                      truncated: { type: boolean }
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /public/display/{roomId}:
+    get:
+      operationId: getRoomDisplay
+      summary: Read anonymous tokens for a waiting-room display
+      parameters:
+        - $ref: "#/components/parameters/RoomId"
+      responses:
+        "200":
+          description: Room name and up to ten called, in-consultation, or waiting tokens for today.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [room, tokens]
+                    properties:
+                      room: { type: string }
+                      tokens:
+                        type: array
+                        items:
+                          type: object
+                          required: [tokenNumber, status]
+                          properties:
+                            tokenNumber: { type: integer, minimum: 1 }
+                            status: { type: string, enum: [called, in_consultation, waiting] }
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /appointments:
+    get:
+      operationId: listAppointments
+      summary: List appointments visible to the current actor
+      description: Patients see their own visits. Doctors see visits assigned to them. Reception and admin see the clinic.
+      security:
+        - ClinicSession: []
+      parameters:
+        - name: from
+          in: query
+          schema: { $ref: "#/components/schemas/BusinessDate" }
+        - name: to
+          in: query
+          description: Inclusive Asia/Karachi business date.
+          schema: { $ref: "#/components/schemas/BusinessDate" }
+        - name: doctorId
+          in: query
+          schema: { $ref: "#/components/schemas/ResourceId" }
+        - name: cursor
+          in: query
+          schema: { type: string, pattern: "^.+~.+$" }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+      responses:
+        "200":
+          description: Appointments in ascending schedule order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Appointment" }
+                  meta: { $ref: "#/components/schemas/CursorPage" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+    post:
+      operationId: bookAppointment
+      summary: Reserve a published doctor's open slot
+      description: Patients book for their linked record. Reception supplies the patient id. Repeating the same Idempotency-Key and body returns the original appointment.
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [doctorId, slotId]
+              properties:
+                doctorId: { $ref: "#/components/schemas/ResourceId" }
+                slotId: { $ref: "#/components/schemas/ResourceId" }
+                patientId:
+                  description: Required for reception. Patients must omit it or repeat their own id.
+                  $ref: "#/components/schemas/ResourceId"
+      responses:
+        "201":
+          description: Appointment confirmed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AppointmentEnvelope" }
+        "200":
+          description: This idempotency key already confirmed the same booking.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AppointmentEnvelope" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The key was reused for a different booking, or the slot is no longer available.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /appointments/walk-in:
+    post:
+      operationId: bookWalkIn
+      summary: Confirm a same-day walk-in
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [doctorId, patientId]
+              properties:
+                doctorId: { $ref: "#/components/schemas/ResourceId" }
+                patientId: { $ref: "#/components/schemas/ResourceId" }
+      responses:
+        "201":
+          description: Walk-in confirmed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AppointmentEnvelope" }
+        "200":
+          description: This idempotency key already confirmed the same walk-in.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AppointmentEnvelope" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /appointments/{id}:
+    get:
+      operationId: getAppointment
+      summary: Read one appointment in the actor's scope
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/AppointmentId"
+      responses:
+        "200":
+          description: Appointment.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AppointmentEnvelope" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /appointments/{id}/cancel:
+    post:
+      operationId: cancelAppointment
+      summary: Cancel a future confirmed appointment
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/AppointmentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExpectedVersion" }
+      responses:
+        "200":
+          description: Appointment cancelled.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AppointmentEnvelope" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /appointments/{id}/reschedule:
+    post:
+      operationId: rescheduleAppointment
+      summary: Move a future confirmed appointment to another slot with the same doctor
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/AppointmentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [slotId, expectedVersion]
+              properties:
+                slotId: { $ref: "#/components/schemas/ResourceId" }
+                expectedVersion: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Appointment moved.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AppointmentEnvelope" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The version changed, or the slot cannot be selected.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /appointments/{id}/check-in:
+    post:
+      operationId: checkInAppointment
+      summary: Issue today's queue token for a confirmed appointment
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/AppointmentId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "201":
+          description: Token issued and the appointment is waiting.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/QueueTokenEnvelope" }
+        "200":
+          description: This appointment was already checked in.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/QueueTokenEnvelope" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /patients:
+    get:
+      operationId: searchPatients
+      summary: Search patients by MRN, phone, or name
+      security:
+        - ClinicSession: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 120 }
+      responses:
+        "200":
+          description: Up to 50 matches.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Patient" }
+                  meta:
+                    type: object
+                    required: [truncated]
+                    properties:
+                      truncated: { type: boolean }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+    post:
+      operationId: registerPatient
+      summary: Register a patient from reception
+      security:
+        - ClinicSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [displayName]
+              properties:
+                displayName: { type: string, minLength: 1, maxLength: 120 }
+                dateOfBirth:
+                  type: ["string", "null"]
+                  description: Asia/Karachi calendar date, not in the future.
+                phone:
+                  type: ["string", "null"]
+                  pattern: "^\\+92[0-9]{10}$"
+      responses:
+        "201":
+          description: Patient registered.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/Patient" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /patients/{id}/history:
+    get:
+      operationId: getPatientHistory
+      summary: Read history the actor is allowed to see
+      description: Patients receive released summaries only. Doctors with a care relationship receive finalized encounters and the allergy record.
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/PatientId"
+      responses:
+        "200":
+          description: Role-specific history.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ReleasedHistoryEnvelope"
+                  - $ref: "#/components/schemas/ClinicalHistoryEnvelope"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /patients/{id}/allergies:
+    put:
+      operationId: recordAllergies
+      summary: Record allergy status for a patient in the doctor's care
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/PatientId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AllergyRecord" }
+      responses:
+        "200":
+          description: Allergy record saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/AllergyRecord" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /queue:
+    get:
+      operationId: listQueue
+      summary: List today's queue
+      description: Doctors are limited to their own queue. Reception may filter by doctor.
+      security:
+        - ClinicSession: []
+      parameters:
+        - name: date
+          in: query
+          schema: { $ref: "#/components/schemas/BusinessDate" }
+        - name: doctorId
+          in: query
+          schema: { $ref: "#/components/schemas/ResourceId" }
+      responses:
+        "200":
+          description: Tokens in doctor and token order, at most 500.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/QueueEntry" }
+                  meta:
+                    type: object
+                    required: [truncated]
+                    properties:
+                      truncated: { type: boolean }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /queue/{id}/call:
+    post:
+      operationId: callQueueToken
+      summary: Call a waiting token
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/QueueId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExpectedVersion" }
+      responses:
+        "200":
+          description: Token called.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/QueueTokenEnvelope" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /queue/{id}/skip:
+    post:
+      operationId: skipQueueToken
+      summary: Skip a waiting or called token
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/QueueId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/QueueReason" }
+      responses:
+        "200":
+          description: Token skipped.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/QueueTokenEnvelope" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /queue/{id}/return:
+    post:
+      operationId: returnQueueToken
+      summary: Return a skipped token to waiting
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/QueueId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/QueueReason" }
+      responses:
+        "200":
+          description: Token waiting again.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/QueueTokenEnvelope" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /queue/{id}/start:
+    post:
+      operationId: startEncounter
+      summary: Start a consultation from the doctor's called token
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/QueueId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExpectedVersion" }
+      responses:
+        "201":
+          description: Draft encounter started.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EncounterEnvelope" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /encounters/{id}:
+    get:
+      operationId: getEncounter
+      summary: Read the doctor's encounter, amendments, and release state
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/EncounterId"
+      responses:
+        "200":
+          description: Encounter with amendments and release timestamp.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    allOf:
+                      - $ref: "#/components/schemas/Encounter"
+                      - type: object
+                        required: [amendments, release]
+                        properties:
+                          amendments:
+                            type: array
+                            items: { $ref: "#/components/schemas/Amendment" }
+                          release:
+                            type: ["object", "null"]
+                            required: [releasedAt]
+                            properties:
+                              releasedAt: { type: string, format: date-time }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: saveEncounterDraft
+      summary: Save draft encounter notes
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/EncounterId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expectedVersion, notes]
+              properties:
+                expectedVersion: { type: integer, minimum: 1 }
+                notes: { $ref: "#/components/schemas/EncounterNotes" }
+      responses:
+        "200":
+          description: Draft saved.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EncounterEnvelope" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /encounters/{id}/finalize:
+    post:
+      operationId: finalizeEncounter
+      summary: Finalize a draft that has an assessment
+      description: Finalized encounters cannot be edited. Corrections are amendments.
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/EncounterId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExpectedVersion" }
+      responses:
+        "200":
+          description: Encounter finalized and the visit completed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EncounterEnvelope" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /encounters/{id}/amendments:
+    post:
+      operationId: amendEncounter
+      summary: Append a correction to a finalized encounter
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/EncounterId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason, correction]
+              properties:
+                reason: { type: string, minLength: 1, maxLength: 400 }
+                correction: { type: string, minLength: 1, maxLength: 6000 }
+      responses:
+        "201":
+          description: Amendment stored.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WriteAck" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /encounters/{id}/release:
+    post:
+      operationId: releaseEncounterSummary
+      summary: Release one patient-facing summary for a finalized encounter
+      security:
+        - ClinicSession: []
+      parameters:
+        - $ref: "#/components/parameters/EncounterId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [summary]
+              properties:
+                summary: { type: string, minLength: 1, maxLength: 6000 }
+      responses:
+        "201":
+          description: Summary released to the patient.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WriteAck" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
 components:
   securitySchemes:
     ClinicSession:
@@ -187,6 +939,36 @@ components:
       in: query
       schema:
         $ref: "#/components/schemas/CatalogSlug"
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, pattern: "^[a-zA-Z0-9._:-]{8,128}$" }
+    AppointmentId:
+      name: id
+      in: path
+      required: true
+      schema: { $ref: "#/components/schemas/ResourceId" }
+    PatientId:
+      name: id
+      in: path
+      required: true
+      schema: { $ref: "#/components/schemas/ResourceId" }
+    QueueId:
+      name: id
+      in: path
+      required: true
+      schema: { $ref: "#/components/schemas/ResourceId" }
+    EncounterId:
+      name: id
+      in: path
+      required: true
+      schema: { $ref: "#/components/schemas/ResourceId" }
+    RoomId:
+      name: roomId
+      in: path
+      required: true
+      schema: { $ref: "#/components/schemas/ResourceId" }
   responses:
     AuthRequired:
       description: A valid session is required.
@@ -208,6 +990,24 @@ components:
             $ref: "#/components/schemas/ApiError"
     CatalogValidation:
       description: Invalid, repeated, or unsupported query parameters.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    ValidationFailed:
+      description: One or more fields are invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    NotFound:
+      description: The resource is outside the actor's scope or does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    Conflict:
+      description: The version, status, or idempotency key does not allow this operation.
       content:
         application/json:
           schema:
@@ -282,3 +1082,201 @@ components:
         requestId:
           type: string
           format: uuid
+    ResourceId:
+      type: string
+      minLength: 1
+      maxLength: 80
+      pattern: "^[a-zA-Z0-9_-]+$"
+    BusinessDate:
+      type: string
+      pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+    CursorPage:
+      type: object
+      required: [nextCursor]
+      properties:
+        nextCursor: { type: [string, "null"] }
+    OpenSlot:
+      type: object
+      required: [slotId, doctorId, startAt, endAt, feeMinor, currency]
+      properties:
+        slotId: { $ref: "#/components/schemas/ResourceId" }
+        doctorId: { $ref: "#/components/schemas/ResourceId" }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        feeMinor: { type: integer, minimum: 0 }
+        currency: { type: string, const: PKR }
+    Appointment:
+      type: object
+      required: [id, reference, patientId, doctorId, slotId, scheduledAt, feeMinor, currency, status, source, version]
+      properties:
+        id: { $ref: "#/components/schemas/ResourceId" }
+        reference: { type: string }
+        patientId: { $ref: "#/components/schemas/ResourceId" }
+        doctorId: { $ref: "#/components/schemas/ResourceId" }
+        slotId: { type: [string, "null"] }
+        scheduledAt: { type: string, format: date-time }
+        feeMinor: { type: integer, minimum: 0 }
+        currency: { type: string, const: PKR }
+        status:
+          type: string
+          enum: [confirmed, waiting, in_consultation, completed, cancelled, no_show, left]
+        source: { type: string, enum: [online, reception, walk_in] }
+        version: { type: integer, minimum: 1 }
+        patientName: { type: string }
+        mrn: { type: string }
+        doctorName: { type: string }
+        specialty: { type: string }
+    AppointmentEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/Appointment" }
+    Patient:
+      type: object
+      required: [id, mrn, displayName, dateOfBirth, phone]
+      properties:
+        id: { $ref: "#/components/schemas/ResourceId" }
+        mrn: { type: string }
+        displayName: { type: string }
+        dateOfBirth: { type: [string, "null"] }
+        phone: { type: [string, "null"] }
+    QueueToken:
+      type: object
+      required: [id, appointmentId, doctorId, roomId, localDate, tokenNumber, status, version, arrivedAt, updatedAt]
+      properties:
+        id: { $ref: "#/components/schemas/ResourceId" }
+        appointmentId: { $ref: "#/components/schemas/ResourceId" }
+        doctorId: { $ref: "#/components/schemas/ResourceId" }
+        roomId: { type: [string, "null"] }
+        localDate: { $ref: "#/components/schemas/BusinessDate" }
+        tokenNumber: { type: integer, minimum: 1 }
+        status:
+          type: string
+          enum: [waiting, called, skipped, in_consultation, completed, left]
+        version: { type: integer, minimum: 1 }
+        arrivedAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    QueueEntry:
+      allOf:
+        - $ref: "#/components/schemas/QueueToken"
+        - type: object
+          required: [patientId, patientName, mrn, encounterId, encounterStatus, encounterVersion]
+          properties:
+            patientId: { $ref: "#/components/schemas/ResourceId" }
+            patientName: { type: string }
+            mrn: { type: string }
+            encounterId: { type: [string, "null"] }
+            encounterStatus: { type: [string, "null"], enum: [draft, finalized, null] }
+            encounterVersion: { type: [integer, "null"] }
+    QueueTokenEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/QueueToken" }
+    ExpectedVersion:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer, minimum: 1 }
+    QueueReason:
+      type: object
+      required: [expectedVersion, reason]
+      properties:
+        expectedVersion: { type: integer, minimum: 1 }
+        reason: { type: string, minLength: 1, maxLength: 400 }
+    EncounterNotes:
+      type: object
+      additionalProperties: false
+      properties:
+        reason: { type: ["string", "null"] }
+        symptoms: { type: ["string", "null"] }
+        history: { type: ["string", "null"] }
+        exam: { type: ["string", "null"] }
+        assessment: { type: ["string", "null"] }
+        diagnosis: { type: ["string", "null"] }
+        plan: { type: ["string", "null"] }
+        followUp: { type: ["string", "null"] }
+        vitals:
+          type: object
+          additionalProperties: false
+          properties:
+            temperatureC: { type: ["number", "null"] }
+            pulseBpm: { type: ["number", "null"] }
+            systolicMmHg: { type: ["number", "null"] }
+            diastolicMmHg: { type: ["number", "null"] }
+            spo2Percent: { type: ["number", "null"] }
+    Encounter:
+      type: object
+      required: [id, appointmentId, patientId, doctorId, status, version, notes, createdAt, finalizedAt]
+      properties:
+        id: { $ref: "#/components/schemas/ResourceId" }
+        appointmentId: { $ref: "#/components/schemas/ResourceId" }
+        patientId: { $ref: "#/components/schemas/ResourceId" }
+        doctorId: { $ref: "#/components/schemas/ResourceId" }
+        status: { type: string, enum: [draft, finalized] }
+        version: { type: integer, minimum: 1 }
+        notes: { $ref: "#/components/schemas/EncounterNotes" }
+        createdAt: { type: string, format: date-time }
+        finalizedAt: { type: [string, "null"], format: date-time }
+    EncounterEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/Encounter" }
+    Amendment:
+      type: object
+      required: [id, reason, correction, authorId, createdAt]
+      properties:
+        id: { $ref: "#/components/schemas/ResourceId" }
+        reason: { type: string }
+        correction: { type: string }
+        authorId: { type: string }
+        createdAt: { type: string, format: date-time }
+    AllergyRecord:
+      type: object
+      required: [status, details]
+      properties:
+        status: { type: string, enum: [none_known, recorded] }
+        details: { type: [string, "null"] }
+    ReleasedHistoryEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            required: [encounterId, doctorName, summary, releasedAt]
+            properties:
+              encounterId: { $ref: "#/components/schemas/ResourceId" }
+              doctorName: { type: string }
+              summary: { type: string }
+              releasedAt: { type: string, format: date-time }
+    ClinicalHistoryEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [visits, allergies]
+          properties:
+            visits:
+              type: array
+              items: { $ref: "#/components/schemas/Encounter" }
+            allergies:
+              type: object
+              required: [status, details]
+              properties:
+                status: { type: string, enum: [none_known, recorded, unknown] }
+                details: { type: [string, "null"] }
+    WriteAck:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [id, encounterId, createdAt]
+          properties:
+            id: { type: string }
+            encounterId: { $ref: "#/components/schemas/ResourceId" }
+            createdAt: { type: string, format: date-time }

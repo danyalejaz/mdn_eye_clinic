@@ -2,466 +2,458 @@
 import Base from "../layouts/Base.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
-import { doctors, faqs, images, portalUrl, services } from "../data/clinic";
+import { faqs, images, portalUrl } from "../data/clinic";
+import { formatFee, loadCatalog } from "../lib/catalog";
 
-const principles = [
-  ["Convenient appointment scheduling", "Reserve specific consultation times online or by phone without long uncertainty."],
-  ["Professional medical consultations", "Unhurried outpatient visits focused on listening and clear clinical guidance."],
-  ["Clear communication", "Transparent consultation fees, plain-language instructions, and written follow-up plans."],
-  ["Continuity of care", "Your longitudinal visit summaries and prescriptions stay organized for every return visit."],
-  ["Accessible patient services", "Designed for clarity across desktop and mobile devices for patients and families."],
-  ["Secure digital healthcare experience", "Role-restricted access ensures your released records and receipts remain private."],
+const { clinic, doctors, services } = await loadCatalog();
+const clinicName = clinic?.name ?? "Mardan Eye Clinic";
+const hours = clinic?.hoursSummary ?? "Hours appear when the clinic publishes them";
+const phone = clinic?.phone ?? null;
+const address = clinic?.address ?? "The street address is not published yet.";
+const departments = [...new Map(doctors.map((doctor) => [doctor.departmentSlug, doctor.departmentName])).entries()];
+const locationAnswer = clinic
+  ? `${clinic.name} is at ${clinic.address}.${clinic.hoursSummary ? ` ${clinic.hoursSummary}.` : ""}`
+  : "The address and hours appear in the visit section when the clinic publishes them.";
+const questions = [
+  ...faqs.filter((item) => !item.question.startsWith("Where")),
+  { question: "Where are you, and when are you open?", answer: locationAnswer },
 ];
-
-const journey = [
-  ["01", "Choose your doctor", "Browse verified physician schedules, specialties, and transparent consultation fees before booking."],
-  ["02", "Book your appointment", "Reserve an available time online or through reception and receive your booking reference immediately."],
-  ["03", "Receive personalized care", "Check in with a quiet queue token and access your released visit summary and prescriptions online."],
+const steps = [
+  ["01", "Look up a time", "Published doctors and open slots are listed here. Nothing is reserved yet."],
+  ["02", "Confirm it", "Sign in and choose the slot. You receive a booking reference when it is accepted."],
+  ["03", "Come for the visit", "Bring that reference. Reception finds the appointment from it."],
 ];
 ---
 
 <Base
-  title="Clinic Name — Outpatient clinic in Mardan"
-  description="Scheduled outpatient consultations in Mardan. Book a visit, view consultation fees, and access released summaries in the patient portal."
+  title={`${clinicName} — Eye clinic in Mardan`}
+  description="Outpatient eye care in Mardan. See published doctors, fees, and open times, then confirm a visit."
 >
-  <SiteHeader portalUrl={portalUrl} />
+  <SiteHeader portalUrl={portalUrl} clinicName={clinicName} hours={hours} phone={phone} />
 
   <main id="main-content" class="flex-1 pb-24 lg:pb-0">
-    <section class="max-w-editorial mx-auto px-xl lg:px-4xl pt-3xl pb-4xl lg:pt-4xl lg:pb-5xl">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-2xl lg:gap-3xl items-end">
-        <div class="lg:col-span-6 flex flex-col gap-xl pb-md">
-          <div class="flex flex-col gap-lg">
-            <p class="font-body text-editorial-label uppercase text-primary">Modern healthcare. Personal attention.</p>
-            <h1 class="font-editorial text-editorial-hero-mobile lg:text-editorial-hero text-editorial-ink text-balance">
-              Care that puts you first.
-            </h1>
-            <p class="font-body text-body-lg text-editorial-muted max-w-[46ch] text-pretty">
-              Thoughtful medical care, experienced professionals and a simpler way to manage your health — right here in Mardan.
-            </p>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-sm sm:gap-md pt-xs">
-            <a href="#quick-book" class="inline-flex items-center justify-center h-[48px] px-xl rounded-md bg-primary text-on-primary font-label text-label-md hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 transition-colors duration-quick">
-              Book an appointment
-            </a>
-            <a href="#doctors" class="inline-flex items-center justify-center h-[48px] px-xl rounded-md bg-surface text-editorial-ink border border-editorial-border font-label text-label-md hover:border-primary hover:text-primary transition-colors duration-quick">
-              Explore our doctors
-            </a>
-          </div>
-          <div class="pt-lg border-t border-editorial-border flex flex-wrap items-center gap-lg font-body text-body-sm text-editorial-muted">
-            <span class="inline-flex items-center gap-xs">
-              <span class="w-2 h-2 rounded-full bg-primary" aria-hidden="true"></span>
-              Accepting scheduled outpatient visits
-            </span>
-            <span>Outpatient clinic · Not an emergency service</span>
-          </div>
-        </div>
-        <div class="lg:col-span-6">
-          <div class="relative">
-            <div class="overflow-hidden rounded-lg bg-sage">
-              <img src={images.consult} alt="Physician speaking attentively with a patient in a sunlit outpatient consultation room" class="w-full aspect-[4/3] object-cover" width="960" height="720" />
-            </div>
-            <div class="mt-md lg:mt-0 lg:absolute lg:-bottom-lg lg:left-lg bg-surface border border-editorial-border rounded-md px-lg py-md flex items-center justify-between gap-xl">
-              <div class="flex flex-col">
-                <span class="font-body text-editorial-label uppercase text-editorial-muted">Location</span>
-                <span class="font-label text-label-md text-editorial-ink">Mardan Outpatient Clinic</span>
-              </div>
-              <span class="font-body text-body-sm text-primary tabular-nums">Mon–Sat · 9:00 AM</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="quick-book" class="max-w-editorial mx-auto px-xl lg:px-4xl pb-4xl lg:pb-5xl">
-      <div class="bg-surface border border-editorial-border rounded-lg p-lg lg:p-xl">
-        <h2 class="font-editorial text-card-title text-editorial-ink mb-md lg:sr-only">Check appointment availability</h2>
-        <form id="availability-form" class="grid grid-cols-1 md:grid-cols-4 gap-lg items-end">
-          <label class="flex flex-col gap-xs md:border-r md:border-editorial-border md:pr-lg">
-            <span class="font-body text-editorial-label uppercase text-editorial-muted">Department</span>
-            <select name="department" class="h-[44px] px-md md:px-sm rounded-md md:rounded-sm border border-editorial-border md:border-0 bg-ivory md:bg-transparent font-body text-body-sm md:text-body-md text-editorial-ink focus:ring-2 focus:ring-focus">
-              <option>General Medicine</option>
-              <option>Family Medicine</option>
-              <option>Preventive Care</option>
-            </select>
-          </label>
-          <label class="flex flex-col gap-xs md:border-r md:border-editorial-border md:pr-lg">
-            <span class="font-body text-editorial-label uppercase text-editorial-muted">Doctor</span>
-            <select name="doctor" class="h-[44px] px-md md:px-sm rounded-md md:rounded-sm border border-editorial-border md:border-0 bg-ivory md:bg-transparent font-body text-body-sm md:text-body-md text-editorial-ink focus:ring-2 focus:ring-focus">
-              <option>Any available physician</option>
-              <option>Demo Doctor A</option>
-              <option>Demo Doctor B</option>
-              <option>Demo Doctor C</option>
-            </select>
-          </label>
-          <label class="flex flex-col gap-xs">
-            <span class="font-body text-editorial-label uppercase text-editorial-muted">Preferred date</span>
-            <input type="date" name="date" value="2026-12-01" class="h-[44px] px-md md:px-sm rounded-md md:rounded-sm border border-editorial-border md:border-0 bg-ivory md:bg-transparent font-body text-body-sm md:text-body-md text-editorial-ink tabular-nums focus:ring-2 focus:ring-focus" />
-          </label>
-          <button type="submit" class="h-[48px] px-xl rounded-md bg-teal-dark text-on-primary font-label text-label-md hover:bg-primary transition-colors duration-quick w-full">
-            Check availability
-          </button>
-        </form>
-        <p id="availability-note" hidden class="mt-md pt-md border-t border-editorial-border font-body text-body-sm text-primary">
-          Live appointment slots are fetched from the clinic schedule when booking opens. A selected time is not reserved until the patient portal confirms it.
+    <section class="lg:grid lg:grid-cols-2 lg:min-h-[calc(100vh-68px)]">
+      <div class="flex flex-col justify-end gap-lg px-lg lg:px-4xl pt-3xl pb-xl lg:py-4xl bg-ivory">
+        <p class="kicker">Mardan · Asia/Karachi</p>
+        <h1 class="display text-editorial-ink max-w-[12ch]">An hour for your eyes.</h1>
+        <p class="max-w-[36rem] text-[1.125rem] leading-relaxed text-editorial-muted">
+          {clinicName} publishes its doctors, fees, and open times here. A slot is yours only after you confirm it.
         </p>
+        <div class="flex flex-wrap items-center gap-xl">
+          <a href="#doctors" class="btn-line">Meet the doctors</a>
+          {phone ? <a href={`tel:${phone}`} class="text-[15px] tabular-nums text-editorial-muted hover:text-editorial-ink">{phone}</a> : null}
+        </div>
+        <p class="text-[13px] text-editorial-muted">Scheduled visits only. This is not an emergency service.</p>
+      </div>
+      <div class="relative bg-sage">
+        <div class="relative h-[78vw] lg:absolute lg:inset-0 lg:h-auto">
+          <img src={images.hero} alt="A physician in a clinic coat" class="media absolute inset-0 w-full h-full object-cover object-[center_20%]" width="1400" height="1600" />
+        </div>
+        <form id="book" data-portal-url={portalUrl} data-api-base={import.meta.env.PUBLIC_API_URL ?? ""} class="relative z-10 mx-lg -mt-16 mb-lg lg:absolute lg:inset-x-xl lg:bottom-xl lg:mx-0 lg:mb-0 lg:mt-0 bg-surface border-t-2 border-gold p-lg flex flex-col gap-md shadow-[0_24px_60px_rgba(16,20,22,0.18)]">
+          <div>
+            <h2 class="font-editorial text-[1.7rem] leading-none tracking-[-0.03em]">Find a time</h2>
+            <p class="mt-xs text-[14px] text-editorial-muted">Confirming happens after sign-in.</p>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-sm">
+            <label class="flex flex-col gap-xs sm:col-span-2">
+              <span class="kicker">Department</span>
+              <select name="department" class="field">
+                <option value="">All departments</option>
+                {departments.map(([slug, name]) => <option value={slug}>{name}</option>)}
+              </select>
+            </label>
+            <label class="flex flex-col gap-xs">
+              <span class="kicker">Doctor</span>
+              <select name="doctorId" class="field">
+                <option value="">Any published doctor</option>
+                {doctors.map((doctor) => (
+                  <option value={doctor.id} data-department={doctor.departmentSlug}>{doctor.displayName}</option>
+                ))}
+              </select>
+            </label>
+            <label class="flex flex-col gap-xs">
+              <span class="kicker">Date</span>
+              <input type="date" name="date" required class="field tabular-nums" />
+            </label>
+          </div>
+          <button type="submit" class="btn-ink">Show open times</button>
+          <div id="availability-results" hidden class="border-t border-editorial-border pt-sm text-[15px]"></div>
+        </form>
       </div>
     </section>
 
-    <section id="about" class="border-t border-editorial-border bg-surface">
-      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl flex flex-col gap-3xl">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-xl lg:gap-3xl items-start">
-          <div class="lg:col-span-7 flex flex-col gap-md">
-            <p class="font-body text-editorial-label uppercase text-primary">A better healthcare experience</p>
-            <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-editorial-ink text-balance">
-              Healthcare built around people, not just appointments.
-            </h2>
-          </div>
-          <div class="lg:col-span-5 flex flex-col gap-lg pt-sm">
-            <p class="font-body text-body-md text-editorial-muted text-pretty">
-              We focus on unhurried outpatient consultations, predictable scheduling, and clear continuity of care. From booking your visit to reviewing your released medical summary, every step is designed to feel calm and transparent.
-            </p>
-            <a href="#facilities" class="inline-flex items-center gap-xs font-label text-label-md text-primary hover:underline w-fit">
-              <span>Discover our clinic</span>
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"></path></svg>
-            </a>
-          </div>
+    <section class="bg-surface border-y border-editorial-border" aria-label="Clinic facts">
+      <dl class="max-w-editorial mx-auto px-lg lg:px-4xl grid grid-cols-1 md:grid-cols-3">
+        <div class="py-xl md:pr-xl md:border-r border-editorial-border">
+          <dt class="kicker">Place</dt>
+          <dd class="mt-sm font-editorial text-[1.65rem] leading-tight tracking-[-0.03em]">{address}</dd>
         </div>
-        <div class="overflow-hidden rounded-lg bg-sage">
-          <img src={images.waiting} alt="Minimalist outpatient clinic reception and sunlit waiting area" class="w-full aspect-video lg:aspect-[21/9] object-cover" width="1600" height="686" />
+        <div class="py-xl md:px-xl md:border-r border-editorial-border border-t md:border-t-0">
+          <dt class="kicker">Hours</dt>
+          <dd class="mt-sm font-editorial text-[1.65rem] leading-tight tracking-[-0.03em]">{hours}</dd>
         </div>
-      </div>
+        <div class="py-xl md:pl-xl border-t md:border-t-0">
+          <dt class="kicker">Fees</dt>
+          <dd class="mt-sm font-editorial text-[1.65rem] leading-tight tracking-[-0.03em]">In PKR, before you book</dd>
+        </div>
+      </dl>
     </section>
 
-    <section id="services" class="border-t border-editorial-border bg-ivory">
-      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl flex flex-col gap-2xl">
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-lg">
-          <div class="flex flex-col gap-sm">
-            <p class="font-body text-editorial-label uppercase text-primary">Medical services</p>
-            <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-editorial-ink text-balance">
-              Expert care for your everyday health.
-            </h2>
-          </div>
-          <a href="#quick-book" class="inline-flex items-center gap-xs font-label text-label-md text-editorial-ink hover:text-primary transition-colors duration-quick">
-            <span>Explore all services</span>
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
-          </a>
+    <section id="care" class="bg-ivory">
+      <div class="max-w-editorial mx-auto px-lg lg:px-4xl py-4xl lg:py-5xl grid grid-cols-1 lg:grid-cols-12 gap-2xl">
+        <div class="lg:col-span-4 lg:sticky lg:top-28 self-start flex flex-col gap-md">
+          <p class="kicker">Care</p>
+          <h2 class="section-title">What you can book.</h2>
+          <p class="text-editorial-muted text-[17px] leading-relaxed max-w-[28rem]">Fees are the published clinic record. Draft services stay off this page.</p>
         </div>
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-2xl items-start">
-          <div class="lg:col-span-7 divide-y divide-editorial-border border-y border-editorial-border">
-            {
-              services.map((service) => (
-                <button type="button" data-service-img={service.image} data-service-alt={service.title} class="service-row w-full text-left py-lg lg:py-xl flex items-start justify-between gap-lg group hover:bg-surface px-md -mx-md rounded-md transition-colors duration-quick">
-                  <div class="flex items-start gap-lg lg:gap-xl">
-                    <span class="font-editorial text-body-sm text-primary tabular-nums pt-xs">{service.id}</span>
-                    <div class="flex flex-col gap-xs">
-                      <h3 class="font-editorial text-card-title lg:text-editorial-sub text-editorial-ink group-hover:text-primary transition-colors duration-quick">{service.title}</h3>
-                      <p class="font-body text-body-sm text-editorial-muted max-w-md">{service.summary}</p>
-                    </div>
+        <div class="lg:col-span-8">
+          {services.length === 0 ? (
+            <p class="text-editorial-muted">No services are published yet.</p>
+          ) : (
+            <ul class="border-t border-editorial-ink">
+              {services.map((service, index) => (
+                <li class="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] gap-md sm:gap-xl items-baseline py-lg border-b border-editorial-border">
+                  <span class="font-editorial text-gold tabular-nums text-[1.25rem]">{String(index + 1).padStart(2, "0")}</span>
+                  <div>
+                    <h3 class="font-editorial text-[1.85rem] leading-tight tracking-[-0.03em]">{service.name}</h3>
+                    <p class="mt-xs text-editorial-muted">{service.description ?? service.departmentName}</p>
                   </div>
-                  <svg class="w-5 h-5 text-editorial-muted group-hover:text-primary shrink-0 mt-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
-                </button>
-              ))
-            }
-          </div>
-          <div class="lg:col-span-5 hidden lg:block">
-            <div class="overflow-hidden rounded-lg bg-sage border border-editorial-border">
-              <img id="service-preview-img" src={images.consult} alt="Outpatient consultation service preview" class="w-full aspect-[4/5] object-cover" width="800" height="1000" />
+                  <p class="font-label tabular-nums sm:text-right">{formatFee(service.feeMinor)}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+          <a href="#book" class="btn-ink mt-xl">Book this care</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="doctors" class="bg-surface border-y border-editorial-border">
+      <div class="max-w-editorial mx-auto px-lg lg:px-4xl pt-4xl lg:pt-5xl pb-2xl flex flex-col md:flex-row md:items-end justify-between gap-lg">
+        <div class="max-w-[36rem] flex flex-col gap-md">
+          <p class="kicker">Doctors</p>
+          <h2 class="section-title">Who you will see.</h2>
+        </div>
+        <p class="max-w-[24rem] text-editorial-muted">Names, specialties, and consultation fees are published by the clinic.</p>
+      </div>
+      {doctors.length === 0 ? (
+        <p class="max-w-editorial mx-auto px-lg lg:px-4xl pb-4xl text-editorial-muted">No doctors are published yet.</p>
+      ) : (
+        <div class="flex flex-col">
+          {doctors.map((doctor, index) => (
+            <article class="grid grid-cols-1 lg:grid-cols-2 border-t border-editorial-border min-h-[520px]">
+              <div class:list={["relative min-h-[360px] bg-sage overflow-hidden", index % 2 === 1 && "lg:order-2"]}>
+                <img src={doctor.photoUrl ?? (index % 2 === 0 ? images.portraitA : images.portraitB)} alt="" class="media absolute inset-0 w-full h-full object-cover object-top" width="900" height="1100" />
+              </div>
+              <div class="flex flex-col justify-center gap-md px-lg lg:px-4xl py-3xl bg-surface">
+                <p class="kicker">{doctor.departmentName}</p>
+                <h3 class="font-editorial text-[clamp(2.4rem,4vw,3.6rem)] leading-none tracking-[-0.03em]">{doctor.displayName}</h3>
+                <p class="text-[18px]">{doctor.specialty}</p>
+                {doctor.qualifications ? <p class="text-editorial-muted">{doctor.qualifications}</p> : null}
+                <p class="tabular-nums text-editorial-muted">Consultation {formatFee(doctor.feeMinor)}</p>
+                <a href="#book" data-pick-doctor={doctor.id} class="pick-doctor btn-line">See open times</a>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+
+    <section id="visit" class="bg-ivory">
+      <div class="max-w-editorial mx-auto px-lg lg:px-4xl py-4xl lg:py-5xl">
+        <p class="kicker">The visit</p>
+        <h2 class="section-title mt-md max-w-[18ch]">From an open hour to a confirmed visit.</h2>
+        <ol class="mt-3xl grid grid-cols-1 md:grid-cols-3 gap-2xl">
+          {steps.map(([number, title, copy]) => (
+            <li class="border-t border-gold pt-lg flex flex-col gap-sm">
+              <span class="font-editorial text-[2.75rem] leading-none tracking-[-0.04em] text-primary">{number}</span>
+              <h3 class="font-editorial text-[1.7rem] tracking-[-0.03em]">{title}</h3>
+              <p class="text-editorial-muted leading-relaxed">{copy}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <section class="bg-surface border-y border-editorial-border">
+      <div class="max-w-editorial mx-auto px-lg lg:px-4xl py-4xl lg:py-5xl grid grid-cols-1 lg:grid-cols-12 gap-2xl">
+        <div class="lg:col-span-4 flex flex-col gap-md">
+          <p class="kicker">Find us</p>
+          <h2 class="section-title">{clinicName}</h2>
+        </div>
+        <div class="lg:col-span-8 flex flex-col gap-md">
+          <p class="font-editorial text-[clamp(1.8rem,3vw,2.6rem)] leading-tight tracking-[-0.03em] max-w-[18ch]">{address}</p>
+          <dl class="border-t border-editorial-ink max-w-[36rem]">
+            <div class="flex justify-between gap-lg py-md border-b border-editorial-border">
+              <dt class="text-editorial-muted">Hours</dt>
+              <dd class="text-right">{hours}</dd>
             </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="doctors" class="border-t border-editorial-border bg-surface">
-      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl flex flex-col gap-2xl">
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-lg">
-          <div class="flex flex-col gap-sm">
-            <p class="font-body text-editorial-label uppercase text-primary">Our physicians</p>
-            <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-editorial-ink text-balance">
-              Meet the people behind your care.
-            </h2>
-          </div>
-          <p class="font-body text-body-sm text-editorial-muted max-w-sm">Demonstration profiles shown until approved clinic credentials are published.</p>
-        </div>
-        <div class="flex gap-lg overflow-x-auto pb-sm snap-x md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
-          {
-            doctors.map((doctor) => (
-              <article class="w-[260px] shrink-0 snap-start md:w-auto flex flex-col gap-lg">
-                <div class="overflow-hidden rounded-lg bg-sage">
-                  <img src={doctor.image} alt={doctor.alt} class="w-full aspect-[4/5] object-cover" width="640" height="800" />
-                </div>
-                <div class="flex flex-col gap-xs">
-                  <h3 class="font-editorial text-card-title lg:text-section-title text-editorial-ink">{doctor.name}</h3>
-                  <p class="font-body text-body-sm text-primary">{doctor.specialty}</p>
-                  <p class="font-body text-body-sm text-editorial-muted tabular-nums">{doctor.hours}</p>
-                </div>
-                <div class="flex items-center gap-lg pt-xs border-t border-editorial-border">
-                  <a href="#quick-book" class="font-label text-label-md text-primary hover:underline">Book appointment</a>
-                  <a href="#doctors" class="font-body text-body-sm text-editorial-muted hover:text-editorial-ink">View profile</a>
-                </div>
-              </article>
-            ))
-          }
-        </div>
-      </div>
-    </section>
-
-    <section class="bg-teal-dark text-on-primary">
-      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl flex flex-col gap-3xl">
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-lg border-b border-primary pb-2xl">
-          <div class="flex flex-col gap-sm">
-            <p class="font-body text-editorial-label uppercase text-sage-accent">Patient journey</p>
-            <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-on-primary">Your visit, made simpler.</h2>
-          </div>
-          <a href="#quick-book" class="inline-flex items-center justify-center h-[48px] px-xl rounded-md bg-surface text-teal-dark font-label text-label-md hover:bg-sage transition-colors duration-quick shrink-0">
-            Book an appointment
-          </a>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2xl">
-          {
-            journey.map(([step, title, copy]) => (
-              <div class="flex flex-col gap-md pt-lg border-t border-primary">
-                <span class="font-editorial text-section-title md:text-headline-lg text-sage-accent tabular-nums">{step}</span>
-                <h3 class="font-editorial text-card-title md:text-section-title text-on-primary">{title}</h3>
-                <p class="font-body text-body-sm md:text-body-md text-sage">{copy}</p>
-              </div>
-            ))
-          }
-        </div>
-      </div>
-    </section>
-
-    <section class="bg-ivory border-b border-editorial-border">
-      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl grid grid-cols-1 lg:grid-cols-12 gap-2xl lg:gap-3xl items-center">
-        <div class="lg:col-span-5 flex flex-col gap-xl">
-          <div class="flex flex-col gap-sm">
-            <p class="font-body text-editorial-label uppercase text-primary">Digital patient portal</p>
-            <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-editorial-ink text-balance">
-              Your healthcare, always within reach.
-            </h2>
-            <p class="font-body text-body-md text-editorial-muted text-pretty">
-              Access your appointments, approved prescriptions, visit history and payment receipts through a secure patient portal.
-            </p>
-          </div>
-          <ul class="flex flex-col gap-sm border-y border-editorial-border py-lg font-body text-body-sm text-editorial-ink">
-            <li class="flex items-center gap-sm"><span class="text-primary" aria-hidden="true">✓</span><span>Manage upcoming and past appointments</span></li>
-            <li class="flex items-center gap-sm"><span class="text-primary" aria-hidden="true">✓</span><span>View approved prescriptions</span></li>
-            <li class="flex items-center gap-sm"><span class="text-primary" aria-hidden="true">✓</span><span>Access released medical records</span></li>
-            <li class="flex items-center gap-sm"><span class="text-primary" aria-hidden="true">✓</span><span>Receive appointment reminders and download receipts</span></li>
-          </ul>
-          <div class="flex flex-wrap items-center gap-md">
-            <a href={`${portalUrl}/patient`} class="inline-flex items-center justify-center h-[48px] px-xl rounded-md bg-primary text-on-primary font-label text-label-md hover:bg-primary-hover">
-              Explore patient portal
-            </a>
-            <a href={`${portalUrl}/patient`} class="inline-flex items-center justify-center h-[48px] px-lg font-label text-label-md text-editorial-ink hover:text-primary">
-              Sign in to your account
-            </a>
-          </div>
-        </div>
-        <div class="lg:col-span-7 bg-sage rounded-xl p-xl lg:p-2xl border border-editorial-border">
-          <div class="bg-surface border border-editorial-border rounded-lg p-xl flex flex-col gap-lg">
-            <div class="flex items-center justify-between border-b border-editorial-border pb-md gap-md">
-              <div>
-                <span class="font-caption text-caption text-editorial-muted">Sample Portal Preview</span>
-                <p class="font-label text-label-md text-editorial-ink">Sample Patient 01 · <span class="tabular-nums">MRN-DEMO-001</span></p>
-              </div>
-              <span class="inline-flex items-center px-md py-xs rounded-full bg-success-soft text-success font-caption text-caption">Confirmed</span>
+            <div class="flex justify-between gap-lg py-md border-b border-editorial-border">
+              <dt class="text-editorial-muted">Phone</dt>
+              <dd>{phone ? <a href={`tel:${phone}`} class="tabular-nums hover:text-primary">{phone}</a> : "Not published"}</dd>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
-              <div class="p-md rounded-md bg-ivory border border-editorial-border">
-                <span class="font-caption text-caption text-editorial-muted">Next appointment</span>
-                <p class="font-label text-label-md text-editorial-ink tabular-nums">Tue, 1 Dec 2026 · 9:00 AM</p>
-                <p class="font-body text-body-sm text-editorial-muted">Demo Doctor A</p>
-              </div>
-              <div class="p-md rounded-md bg-ivory border border-editorial-border">
-                <span class="font-caption text-caption text-editorial-muted">Approved prescription</span>
-                <p class="font-label text-label-md text-editorial-ink tabular-nums">RX-2026-000012</p>
-                <p class="font-body text-body-sm text-primary">PDF ready for download</p>
+            <div class="flex justify-between gap-lg py-md border-b border-editorial-border">
+              <dt class="text-editorial-muted">Time zone</dt>
+              <dd>Asia/Karachi</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <section id="questions" class="bg-ivory">
+      <div class="max-w-editorial mx-auto px-lg lg:px-4xl py-4xl lg:py-5xl grid grid-cols-1 lg:grid-cols-12 gap-2xl">
+        <div class="lg:col-span-4">
+          <p class="kicker">Questions</p>
+          <h2 class="section-title mt-md">Before you come.</h2>
+        </div>
+        <div class="lg:col-span-8 border-t border-editorial-ink">
+          {questions.map((item) => (
+            <div class="faq-item border-b border-editorial-border">
+              <button type="button" class="faq-toggle w-full flex items-center justify-between gap-lg py-lg text-left" aria-expanded={item.open ? "true" : "false"}>
+                <span class="font-editorial text-[1.45rem] leading-tight tracking-[-0.02em]">{item.question}</span>
+                <span class="faq-icon text-gold text-[1.5rem] leading-none" aria-hidden="true">{item.open ? "–" : "+"}</span>
+              </button>
+              <div class:list={["faq-panel", item.open && "is-open"]} inert={!item.open}>
+                <div><p class="pb-lg text-editorial-muted max-w-[40rem] leading-relaxed">{item.answer}</p></div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="facilities" class="bg-surface border-b border-editorial-border">
-      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl flex flex-col gap-2xl">
-        <div class="flex flex-col gap-sm max-w-2xl">
-          <p class="font-body text-editorial-label uppercase text-primary">Clinic environment</p>
-          <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-editorial-ink text-balance">
-            A space designed around your comfort.
-          </h2>
-        </div>
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-xl items-stretch">
-          <div class="lg:col-span-7 overflow-hidden rounded-lg bg-sage">
-            <img src={images.entrance} alt="Contemporary outpatient clinic entrance and courtyard" class="w-full h-full object-cover min-h-[280px]" width="1200" height="800" />
-          </div>
-          <div class="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 lg:grid-rows-2 gap-xl">
-            <div class="overflow-hidden rounded-lg bg-sage min-h-[180px]">
-              <img src={images.waiting} alt="Quiet clinic reception and waiting lounge" class="w-full h-full object-cover min-h-[180px]" width="800" height="500" />
-            </div>
-            <div class="overflow-hidden rounded-lg bg-sage min-h-[180px]">
-              <img src={images.consult} alt="Private outpatient consultation room" class="w-full h-full object-cover min-h-[180px]" width="800" height="500" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="bg-ivory border-b border-editorial-border">
-      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl grid grid-cols-1 lg:grid-cols-12 gap-2xl items-start">
-        <div class="lg:col-span-5 flex flex-col gap-sm">
-          <p class="font-body text-editorial-label uppercase text-primary">Our principles</p>
-          <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-editorial-ink text-balance">
-            A more thoughtful approach to care.
-          </h2>
-        </div>
-        <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-x-2xl gap-y-xl">
-          {
-            principles.map(([title, copy]) => (
-              <div class="pt-md border-t border-editorial-border flex flex-col gap-xs">
-                <h3 class="font-editorial text-card-title text-editorial-ink">{title}</h3>
-                <p class="font-body text-body-sm text-editorial-muted">{copy}</p>
-              </div>
-            ))
-          }
-        </div>
-      </div>
-    </section>
-
-    <section id="faq" class="bg-surface border-b border-editorial-border">
-      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl grid grid-cols-1 lg:grid-cols-12 gap-2xl items-start">
-        <div class="lg:col-span-5 flex flex-col gap-md">
-          <p class="font-body text-editorial-label uppercase text-primary">FAQ</p>
-          <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-editorial-ink text-balance">
-            Answers before your visit.
-          </h2>
-          <p class="font-body text-body-md text-editorial-muted max-w-sm">Practical details on booking, arrivals, and accessing your records.</p>
-          <a href="#contact" class="font-label text-label-md text-primary hover:underline w-fit pt-xs">Contact reception</a>
-        </div>
-        <div class="lg:col-span-7 divide-y divide-editorial-border border-y border-editorial-border">
-          {
-            faqs.map((item) => (
-              <div class="faq-item py-lg">
-                <button type="button" aria-expanded={item.open ? "true" : "false"} class="faq-toggle w-full flex items-center justify-between gap-md text-left font-editorial text-card-title text-editorial-ink">
-                  <span>{item.question}</span>
-                  <span class="faq-icon text-primary shrink-0" aria-hidden="true">{item.open ? "–" : "+"}</span>
-                </button>
-                <p class:list={["faq-panel mt-sm font-body text-body-sm text-editorial-muted", !item.open && "hidden"]}>{item.answer}</p>
-              </div>
-            ))
-          }
-        </div>
-      </div>
-    </section>
-
-    <section id="contact" class="bg-ivory">
-      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl grid grid-cols-1 lg:grid-cols-12 gap-2xl items-stretch">
-        <div class="lg:col-span-5 flex flex-col justify-between gap-xl">
-          <div class="flex flex-col gap-md">
-            <p class="font-body text-editorial-label uppercase text-primary">Visit us</p>
-            <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-sub text-editorial-ink">Clinic Name · Mardan</h2>
-            <p class="font-body text-body-md text-editorial-muted">Address placeholder, Mardan, Khyber Pakhtunkhwa, Pakistan</p>
-          </div>
-          <div class="flex flex-col gap-md border-y border-editorial-border py-lg font-body text-body-sm">
-            <div class="flex justify-between gap-md"><span class="text-editorial-muted">Opening hours</span><span class="text-editorial-ink tabular-nums text-right">Mon–Sat · 9:00 AM – 8:00 PM</span></div>
-            <div class="flex justify-between gap-md"><span class="text-editorial-muted">Phone</span><a href="tel:+923000000001" class="text-editorial-ink tabular-nums">+92 300 0000001</a></div>
-            <div class="flex justify-between gap-md"><span class="text-editorial-muted">WhatsApp</span><span class="text-editorial-ink tabular-nums">+92 300 0000002</span></div>
-          </div>
-          <div class="flex flex-wrap gap-md">
-            <a href="tel:+923000000001" class="inline-flex items-center justify-center h-[44px] px-lg rounded-md bg-primary text-on-primary font-label text-label-md hover:bg-primary-hover">Call reception</a>
-            <a href="mailto:contact@clinic.example.test" class="inline-flex items-center justify-center h-[44px] px-lg rounded-md bg-surface text-editorial-ink border border-editorial-border font-label text-label-md hover:border-primary">Contact reception</a>
-          </div>
-        </div>
-        <div class="lg:col-span-7 bg-sage border border-editorial-border rounded-lg p-2xl flex flex-col items-center justify-center text-center gap-md min-h-[280px]">
-          <svg class="w-8 h-8 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
-          <h3 class="font-editorial text-card-title text-editorial-ink">Privacy-first map preview</h3>
-          <p id="map-copy" class="font-body text-body-sm text-editorial-ink max-w-sm">Interactive map tiles load only when requested to keep the first view fast. The street address is still a placeholder pending clinic approval.</p>
-          <button id="map-load" type="button" class="inline-flex items-center justify-center h-[44px] px-lg rounded-md bg-surface text-primary border border-editorial-border font-label text-label-md hover:bg-primary-soft">
-            Load interactive map
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <section class="bg-sage border-t border-editorial-border">
-      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl flex flex-col lg:flex-row lg:items-end justify-between gap-xl">
-        <div class="flex flex-col gap-md max-w-2xl">
-          <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-editorial-ink text-balance">
-            Your next step towards better care.
-          </h2>
-          <p class="font-body text-body-lg text-editorial-ink">Find the right doctor and schedule your visit at a time that works for you.</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-md shrink-0">
-          <a href="#quick-book" class="inline-flex items-center justify-center h-[48px] px-xl rounded-md bg-primary text-on-primary font-label text-label-md hover:bg-primary-hover">Book an appointment</a>
-          <a href="#contact" class="inline-flex items-center justify-center h-[48px] px-xl rounded-md bg-surface text-editorial-ink border border-editorial-border font-label text-label-md hover:border-primary">Contact our reception</a>
+          ))}
         </div>
       </div>
     </section>
   </main>
 
-  <SiteFooter portalUrl={portalUrl} />
+  <SiteFooter portalUrl={portalUrl} clinicName={clinicName} phone={phone} hours={hours} address={address} services={services.map((service) => service.name)} />
 
-  <div class="lg:hidden fixed bottom-0 inset-x-0 bg-surface border-t border-editorial-border px-lg py-sm flex items-center justify-between gap-md z-30">
-    <div class="flex flex-col">
-      <span class="font-label text-label-md text-editorial-ink">Outpatient visits</span>
-      <span class="font-caption text-caption text-editorial-muted tabular-nums">Mon–Sat · Mardan</span>
-    </div>
-    <a href="#quick-book" class="inline-flex items-center justify-center h-[44px] px-lg rounded-md bg-primary text-on-primary font-label text-label-md">Book appointment</a>
+  <div class="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-surface/95 backdrop-blur-md border-t border-editorial-border px-lg py-sm flex items-center justify-between gap-md">
+    <span class="text-[14px]">Open times</span>
+    <a href="#book" class="btn-ink h-10 px-lg text-[14px]">Book</a>
   </div>
 
-<script>
-  const menuButton = document.getElementById("mobile-menu-btn");
-  const drawer = document.getElementById("mobile-drawer");
-  menuButton?.addEventListener("click", () => {
-    if (!drawer || !menuButton) return;
-    const willOpen = drawer.hasAttribute("hidden");
-    drawer.toggleAttribute("hidden", !willOpen);
-    drawer.classList.toggle("flex", willOpen);
-    menuButton.setAttribute("aria-expanded", String(willOpen));
-    menuButton.setAttribute("aria-label", willOpen ? "Close menu" : "Open menu");
-  });
-  drawer?.querySelectorAll("a").forEach((link) => {
-    link.addEventListener("click", () => {
-      drawer.setAttribute("hidden", "");
-      drawer.classList.remove("flex");
-      menuButton?.setAttribute("aria-expanded", "false");
-      menuButton?.setAttribute("aria-label", "Open menu");
-    });
-  });
+  <div id="command" hidden class="fixed inset-0 z-50 bg-night/50 p-lg flex items-start justify-center pt-[12vh]">
+    <div id="command-panel" role="dialog" aria-modal="true" aria-label="Jump to a section" class="w-full max-w-[32rem] bg-surface border-t-2 border-gold shadow-[0_24px_60px_rgba(16,20,22,0.18)]">
+      <input id="command-input" class="w-full h-14 px-lg bg-transparent border-b border-editorial-border text-[16px]" placeholder="Jump to care, doctors, visit, questions, or booking" />
+      <ul id="command-list" class="py-sm"></ul>
+    </div>
+  </div>
 
-  document.getElementById("availability-form")?.addEventListener("submit", (event) => {
-    event.preventDefault();
-    document.getElementById("availability-note")?.removeAttribute("hidden");
-  });
-
-  document.querySelectorAll<HTMLButtonElement>(".service-row").forEach((button) => {
-    button.addEventListener("click", () => {
-      const image = document.getElementById("service-preview-img");
-      const next = button.dataset.serviceImg;
-      if (image instanceof HTMLImageElement && next) {
-        image.src = next;
-        image.alt = button.dataset.serviceAlt ?? "Service preview";
+  <script>
+    const motion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.querySelectorAll<HTMLImageElement>("img.media").forEach((image) => {
+      const sharpen = () => image.classList.add("is-sharp");
+      if (image.complete && image.naturalWidth > 0) sharpen();
+      else {
+        image.addEventListener("load", sharpen, { once: true });
+        image.addEventListener("error", sharpen, { once: true });
       }
     });
-  });
 
-  document.querySelectorAll<HTMLButtonElement>(".faq-toggle").forEach((button) => {
-    button.addEventListener("click", () => {
-      const panel = button.parentElement?.querySelector(".faq-panel");
-      const icon = button.querySelector(".faq-icon");
-      const expanded = button.getAttribute("aria-expanded") === "true";
-      button.setAttribute("aria-expanded", String(!expanded));
-      panel?.classList.toggle("hidden", expanded);
-      if (icon) icon.textContent = expanded ? "+" : "–";
+    const menuButton = document.getElementById("menu-button");
+    const menuPanel = document.getElementById("menu-panel");
+    menuButton?.addEventListener("click", () => {
+      if (!menuPanel || !menuButton) return;
+      const open = menuPanel.hasAttribute("hidden");
+      menuPanel.toggleAttribute("hidden", !open);
+      menuButton.setAttribute("aria-expanded", String(open));
+      menuButton.querySelector(".sr-only")!.textContent = open ? "Close menu" : "Open menu";
     });
-  });
+    menuPanel?.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => {
+        menuPanel.setAttribute("hidden", "");
+        menuButton?.setAttribute("aria-expanded", "false");
+      });
+    });
 
-  document.getElementById("map-load")?.addEventListener("click", () => {
-    const copy = document.getElementById("map-copy");
-    if (copy) {
-      copy.textContent = "The interactive map stays off until the clinic approves a street address. Call reception for directions in the meantime.";
+    const form = document.getElementById("book");
+    const dateInput = form?.querySelector<HTMLInputElement>('input[name="date"]');
+    if (dateInput && !dateInput.value) {
+      dateInput.value = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Karachi",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date());
     }
-  });
-</script>
+
+    document.querySelectorAll<HTMLAnchorElement>(".pick-doctor").forEach((link) => {
+      link.addEventListener("click", () => {
+        const select = form?.querySelector<HTMLSelectElement>('select[name="doctorId"]');
+        const doctorId = link.dataset.pickDoctor;
+        if (select && doctorId) select.value = doctorId;
+      });
+    });
+
+    form?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!(form instanceof HTMLFormElement)) return;
+      const results = document.getElementById("availability-results");
+      if (!results) return;
+      results.hidden = false;
+      const data = new FormData(form);
+      const date = String(data.get("date") ?? "");
+      const doctorId = String(data.get("doctorId") ?? "");
+      const department = String(data.get("department") ?? "");
+      const allowed = new Set(
+        [...form.querySelectorAll<HTMLOptionElement>('select[name="doctorId"] option')]
+          .filter((option) => option.value && (!department || option.dataset.department === department))
+          .map((option) => option.value),
+      );
+      const params = new URLSearchParams({ from: date, to: date });
+      if (doctorId) params.set("doctorId", doctorId);
+      results.setAttribute("aria-busy", "true");
+      results.innerHTML = `<p class="sr-only">Looking up published slots</p><div class="flex flex-col gap-sm" aria-hidden="true"><span class="shimmer"></span><span class="shimmer"></span><span class="shimmer"></span></div>`;
+      const paint = (draw: () => void) => {
+        const view = document as Document & { startViewTransition?: (update: () => void) => void };
+        if (motion && view.startViewTransition) view.startViewTransition(draw);
+        else draw();
+      };
+      try {
+        if (!navigator.onLine) throw new Error("offline");
+        const response = await fetch(`${form.dataset.apiBase ?? ""}/api/v1/public/availability?${params}`);
+        const body = (await response.json()) as {
+          data?: { slotId: string; doctorId: string; startAt: string }[];
+          error?: { message: string };
+        };
+        if (!response.ok || !body.data) {
+          paint(() => { results.textContent = body.error?.message ?? "Open times could not be loaded."; });
+          return;
+        }
+        const names = new Map(
+          [...form.querySelectorAll<HTMLOptionElement>('select[name="doctorId"] option')].map((option) => [option.value, option.textContent ?? "Doctor"]),
+        );
+        const slots = body.data.filter((slot) => !department || allowed.has(slot.doctorId));
+        paint(() => {
+          if (slots.length === 0) {
+            results.textContent = "No open slots on that date.";
+            return;
+          }
+          const list = document.createElement("ul");
+          list.className = "flex flex-col";
+          slots.forEach((slot, index) => {
+            const item = document.createElement("li");
+            item.className = "slot-row border-t border-editorial-border";
+            item.style.animationDelay = `${index * 40}ms`;
+            const link = document.createElement("a");
+            const when = new Intl.DateTimeFormat("en-PK", {
+              timeZone: "Asia/Karachi",
+              hour: "numeric",
+              minute: "2-digit",
+            }).format(new Date(slot.startAt));
+            link.href = `${form.dataset.portalUrl}/patient?doctorId=${encodeURIComponent(slot.doctorId)}&slotId=${encodeURIComponent(slot.slotId)}`;
+            link.className = "flex items-center justify-between gap-md py-sm font-label hover:text-primary";
+            link.dataset.warm = link.href;
+            link.innerHTML = `<span>${when}</span><span class="text-primary">Confirm</span>`;
+            link.setAttribute("aria-label", `Confirm ${when} with ${names.get(slot.doctorId) ?? "this doctor"}`);
+            link.addEventListener("pointerenter", () => warm(link.href));
+            link.addEventListener("click", () => {
+              link.querySelector("span:last-child")!.textContent = "Opening confirmation…";
+            });
+            item.append(link);
+            list.append(item);
+          });
+          results.replaceChildren(list);
+        });
+      } catch {
+        paint(() => { results.textContent = "The clinic service is not reachable right now. The form is still here when it returns."; });
+      } finally {
+        results.removeAttribute("aria-busy");
+      }
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && resultsWereShown() && form instanceof HTMLFormElement) form.requestSubmit();
+    });
+
+    function resultsWereShown() {
+      const results = document.getElementById("availability-results");
+      return Boolean(results && !results.hidden && results.childElementCount > 0);
+    }
+
+    function warm(url: string) {
+      if (document.head.querySelector(`link[href="${CSS.escape(url)}"]`)) return;
+      const link = document.createElement("link");
+      link.rel = "prefetch";
+      link.href = url;
+      document.head.append(link);
+    }
+
+    const portalOrigin = form instanceof HTMLFormElement ? form.dataset.portalUrl : "";
+    if (portalOrigin) {
+      const origin = document.createElement("link");
+      origin.rel = "preconnect";
+      origin.href = new URL(portalOrigin).origin;
+      document.head.append(origin);
+    }
+
+    document.querySelectorAll<HTMLButtonElement>(".faq-toggle").forEach((button) => {
+      button.addEventListener("click", () => {
+        const panel = button.parentElement?.querySelector(".faq-panel");
+        const icon = button.querySelector(".faq-icon");
+        const expanded = button.getAttribute("aria-expanded") === "true";
+        button.setAttribute("aria-expanded", String(!expanded));
+        panel?.classList.toggle("is-open", !expanded);
+        if (panel instanceof HTMLElement) panel.inert = expanded;
+        if (icon) icon.textContent = expanded ? "+" : "–";
+      });
+    });
+
+    const commands = [
+      ["Care", "#care"],
+      ["Doctors", "#doctors"],
+      ["Visit", "#visit"],
+      ["Questions", "#questions"],
+      ["Book a time", "#book"],
+    ];
+    const command = document.getElementById("command");
+    const commandInput = document.getElementById("command-input");
+    const commandList = document.getElementById("command-list");
+
+    function renderCommands(query: string) {
+      if (!commandList) return;
+      const matches = commands.filter(([label]) => label.toLowerCase().includes(query.toLowerCase()));
+      commandList.replaceChildren();
+      for (const [label, href] of matches) {
+        const item = document.createElement("li");
+        const link = document.createElement("a");
+        link.href = href;
+        link.className = "block px-lg py-sm hover:bg-ivory";
+        link.textContent = label;
+        link.addEventListener("click", () => command?.setAttribute("hidden", ""));
+        item.append(link);
+        commandList.append(item);
+      }
+    }
+
+    function openCommand() {
+      command?.removeAttribute("hidden");
+      if (commandInput instanceof HTMLInputElement) {
+        commandInput.value = "";
+        commandInput.focus();
+      }
+      renderCommands("");
+    }
+
+    commandInput?.addEventListener("input", () => {
+      if (commandInput instanceof HTMLInputElement) renderCommands(commandInput.value);
+    });
+    command?.addEventListener("click", (event) => {
+      if (event.target === command) command.setAttribute("hidden", "");
+    });
+
+    window.addEventListener("keydown", (event) => {
+      const typing = event.target instanceof HTMLElement && Boolean(event.target.closest("input, textarea, select"));
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        openCommand();
+        return;
+      }
+      if (event.key === "Escape") command?.setAttribute("hidden", "");
+      if (!typing && event.key.toLowerCase() === "b") {
+        event.preventDefault();
+        document.getElementById("book")?.scrollIntoView({ block: "center" });
+        form?.querySelector<HTMLSelectElement>('select[name="doctorId"]')?.focus();
+      }
+    });
+  </script>
 </Base>

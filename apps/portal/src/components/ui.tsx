@@ -37,6 +37,42 @@ export function Metric({ label, value, tone = "ink" }: { label: string; value: s
   );
 }
 
+const statusTone = {
+  confirmed: "success",
+  waiting: "warning",
+  called: "info",
+  in_consultation: "info",
+  completed: "success",
+  cancelled: "neutral",
+  skipped: "warning",
+  no_show: "danger",
+  left: "neutral",
+  draft: "warning",
+  finalized: "success",
+} as const;
+
+export function StatusBadge({ status }: { status: string }) {
+  const tone = statusTone[status as keyof typeof statusTone] ?? "neutral";
+  return <Badge tone={tone}>{status.replaceAll("_", " ")}</Badge>;
+}
+
+export function Notice({ children }: { children: ReactNode }) {
+  return (
+    <p role="alert" className="font-body text-body-sm text-danger">
+      {children}
+    </p>
+  );
+}
+
+export const controlClass =
+  "h-[44px] px-md rounded-md bg-surface text-text border border-control-border font-body text-body-sm";
+
+export const primaryButtonClass =
+  "inline-flex items-center justify-center gap-xs h-[44px] px-lg rounded-md bg-primary text-on-primary font-label text-label-md hover:bg-primary-hover disabled:opacity-60";
+
+export const secondaryButtonClass =
+  "inline-flex items-center justify-center gap-xs h-[44px] px-lg rounded-md bg-surface text-primary border border-control-border font-label text-label-md hover:bg-primary-soft disabled:opacity-60";
+
 export function Mark() {
   return (
     <span className="w-8 h-8 rounded-md bg-primary flex items-center justify-center text-on-primary" aria-hidden="true">

@@ -8,6 +8,13 @@ type Appointment = {
 };
 const projection = `id, reference, patient_id AS patientId, doctor_id AS doctorId,
   slot_id AS slotId, scheduled_at AS scheduledAt, fee_minor AS feeMinor, status, source, version, 'PKR' AS currency`;
+const readProjection = `appointments.id, appointments.reference, appointments.patient_id AS patientId,
+  appointments.doctor_id AS doctorId, appointments.slot_id AS slotId, appointments.scheduled_at AS scheduledAt,
+  appointments.fee_minor AS feeMinor, appointments.status, appointments.source, appointments.version, 'PKR' AS currency,
+  patients.display_name AS patientName, patients.mrn, doctors.display_name AS doctorName, doctors.specialty`;
+const readFrom = `FROM appointments
+  JOIN patients ON patients.id = appointments.patient_id
+  JOIN doctors ON doctors.id = appointments.doctor_id`;
 const day = 86_400_000;
 
 export const availability = new Hono<ApiEnv>();
@@ -50,12 +57,12 @@ appointments.get("/", async (c) => {
       (rawCursor !== undefined && (!cursorAt || !Number.isFinite(Date.parse(cursorAt)) || !id(cursorId) || extraCursor !== undefined))) return invalid(c);
   const limit = Number(size);
   const { results } = await c.env.DB.prepare(`
-    SELECT ${projection} FROM appointments
-    WHERE (?1 != 'patient' OR patient_id = ?2) AND (?1 != 'doctor' OR doctor_id = ?3)
-      AND (?4 IS NULL OR scheduled_at >= ?4) AND (?5 IS NULL OR scheduled_at < ?5)
-      AND (?6 IS NULL OR doctor_id = ?6)
-      AND (?7 IS NULL OR scheduled_at > ?7 OR (scheduled_at = ?7 AND id > ?8))
-    ORDER BY scheduled_at, id LIMIT ?9
+    SELECT ${readProjection} ${readFrom}
+    WHERE (?1 != 'patient' OR appointments.patient_id = ?2) AND (?1 != 'doctor' OR appointments.doctor_id = ?3)
+      AND (?4 IS NULL OR appointments.scheduled_at >= ?4) AND (?5 IS NULL OR appointments.scheduled_at < ?5)
+      AND (?6 IS NULL OR appointments.doctor_id = ?6)
+      AND (?7 IS NULL OR appointments.scheduled_at > ?7 OR (appointments.scheduled_at = ?7 AND appointments.id > ?8))
+    ORDER BY appointments.scheduled_at, appointments.id LIMIT ?9
   `).bind(actor.role, actor.patientId, actor.doctorId, fromTime === null ? null : new Date(fromTime).toISOString(),
     toTime === null ? null : new Date(toTime + day).toISOString(), doctorFilter, cursorAt ?? null, cursorId ?? null, limit + 1)
     .all<Appointment>();
@@ -67,8 +74,9 @@ appointments.get("/", async (c) => {
 appointments.get("/:id", async (c) => {
   const actor = c.get("actor");
   const appointment = await c.env.DB.prepare(`
-    SELECT ${projection} FROM appointments
-    WHERE id = ?1 AND (?2 != 'patient' OR patient_id = ?3) AND (?2 != 'doctor' OR doctor_id = ?4)
+    SELECT ${readProjection} ${readFrom}
+    WHERE appointments.id = ?1 AND (?2 != 'patient' OR appointments.patient_id = ?3)
+      AND (?2 != 'doctor' OR appointments.doctor_id = ?4)
   `).bind(c.req.param("id"), actor.role, actor.patientId, actor.doctorId).first<Appointment>();
   return appointment ? c.json({ data: appointment }) : c.notFound();
 });

@@ -1,2 +1,17 @@
 @import "tailwindcss" source(".");
 @import "@clinic/ui/theme.css";
+
+@keyframes shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #efe8dc 0%, #f8f4ec 45%, #efe8dc 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer { animation: none; }
+}

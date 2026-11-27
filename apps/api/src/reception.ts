@@ -43,7 +43,7 @@ reception.post("/appointments/walk-in", requireActor, frontDesk, async (c) => {
   const appointmentId = crypto.randomUUID();
   const now = new Date().toISOString();
   const db = c.env.DB;
-  const projection = `id, reference, patient_id AS patientId, doctor_id AS doctorId,
+  const projection = `id, reference, patient_id AS patientId, doctor_id AS doctorId, slot_id AS slotId,
     scheduled_at AS scheduledAt, fee_minor AS feeMinor, 'PKR' AS currency, source, status, version`;
   const created = await db.prepare(`
     INSERT INTO appointments (id, reference, patient_id, doctor_id, scheduled_at,
@@ -95,8 +95,10 @@ reception.get("/queue", requireActor, requireRole("receptionist", "doctor"), asy
     SELECT q.id, q.appointment_id AS appointmentId, q.doctor_id AS doctorId,
       q.room_id AS roomId, q.local_date AS localDate, q.token_number AS tokenNumber,
       q.status, q.version, q.arrived_at AS arrivedAt, q.updated_at AS updatedAt,
-      p.display_name AS patientName, p.mrn
+      a.patient_id AS patientId, p.display_name AS patientName, p.mrn,
+      e.id AS encounterId, e.status AS encounterStatus, e.version AS encounterVersion
     FROM queue_tokens q JOIN appointments a ON a.id = q.appointment_id JOIN patients p ON p.id = a.patient_id
+    LEFT JOIN encounters e ON e.queue_id = q.id
     WHERE q.local_date = ?1 AND (?2 IS NULL OR q.doctor_id = ?2)
     ORDER BY q.doctor_id, q.token_number LIMIT 501
   `).bind(date, doctorId).all();
