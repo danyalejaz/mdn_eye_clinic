@@ -3,7 +3,7 @@ import PatientPage from "../layouts/PatientPage.astro";
 import { loadCatalog, formatFee } from "../lib/catalog";
 const { clinic, doctors } = await loadCatalog();
 ---
-<PatientPage {clinic} label="Doctors" title="Find your eye doctor" description={import.meta.env.PUBLIC_CLINIC_LAUNCH === "true" ? "Contact the clinic for information about doctors and appointments." : "Compare specialties, qualifications and consultation fees. Choose a doctor below to check appointment times."}>
+<PatientPage {clinic} label="Doctors" title="Find your eye doctor" description="Contact the clinic for information about doctors and appointments.">
   <section class="wrap section reading-grid">
     <div>
       <p class="eyebrow">Doctor directory</p>

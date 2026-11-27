@@ -1,15 +1,13 @@
 ---
 import Mark from "./Mark.astro";
-import { launchMode } from "../data/clinic";
 
 interface Props {
-  portalUrl: string;
   clinicName: string;
   phone: string | null;
   address: string;
 }
 
-const { portalUrl, clinicName, phone, address } = Astro.props;
+const { clinicName, phone, address } = Astro.props;
 const isBookingPage = Astro.url.pathname.replace(/\/$/, "") === "/appointments";
 ---
 
@@ -34,7 +32,6 @@ const isBookingPage = Astro.url.pathname.replace(/\/$/, "") === "/appointments";
         <a href="/patient-guide/">Patient guide</a>
         <a href="/visit/">Plan your visit</a>
         <a href="/visit/#questions">Patient questions</a>
-        {!launchMode && <a href={`${portalUrl}/sign-in`}>My appointments <span aria-hidden="true">↗</span></a>}
       </nav>
     </div>
     <div class="footer-bottom">

@@ -30,47 +30,12 @@ export type PublicService = {
   departmentName: string;
 };
 
-const apiBase = import.meta.env.API_URL ?? "http://127.0.0.1:8787";
-
-async function read<T>(path: string): Promise<T | null> {
-  try {
-    const response = await fetch(new URL(path, apiBase));
-    if (!response.ok) return null;
-    return (await response.json()) as T;
-  } catch {
-    return null;
-  }
-}
-
-async function list<T extends { slug: string }>(path: string): Promise<T[]> {
-  const rows: T[] = [];
-  let cursor = "";
-  for (let page = 0; page < 20; page += 1) {
-    const params = new URLSearchParams({ limit: "100" });
-    if (cursor) params.set("cursor", cursor);
-    const body = await read<{ data: T[]; meta: { nextCursor: string | null } }>(`${path}?${params}`);
-    if (!body) return rows;
-    rows.push(...body.data);
-    if (!body.meta.nextCursor) break;
-    cursor = body.meta.nextCursor;
-  }
-  return rows;
-}
-
 export async function loadCatalog() {
-  if (import.meta.env.PUBLIC_CLINIC_LAUNCH === "true") {
-    return {
-      clinic: { name: "Mardan Eye Clinic", address: "", phone: "0937-867538", hoursSummary: null, timezone: "Asia/Karachi" as const, currency: "PKR" as const },
-      doctors: [] as PublicDoctor[],
-      services: [] as PublicService[],
-    };
-  }
-  const [clinicBody, doctors, services] = await Promise.all([
-    read<{ data: ClinicProfile }>("/api/v1/public/clinic"),
-    list<PublicDoctor>("/api/v1/public/doctors"),
-    list<PublicService>("/api/v1/public/services"),
-  ]);
-  return { clinic: clinicBody?.data ?? null, doctors, services };
+  return {
+    clinic: { name: "Mardan Eye Clinic", address: "", phone: "0937-867538", hoursSummary: null, timezone: "Asia/Karachi" as const, currency: "PKR" as const },
+    doctors: [] as PublicDoctor[],
+    services: [] as PublicService[],
+  };
 }
 
 export function formatFee(minor: number) {

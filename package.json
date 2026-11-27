@@ -2,15 +2,11 @@
   "name": "mdn-eye-clinic",
   "private": true,
   "packageManager": "pnpm@10.28.2",
-  "engines": {
-    "node": "^24.0.0"
-  },
+  "engines": { "node": "^24.0.0" },
   "scripts": {
-    "dev": "pnpm --filter @clinic/api dev",
-    "build": "pnpm --filter @clinic/api build",
-    "typecheck": "pnpm --filter @clinic/api typecheck",
-    "test": "pnpm --filter @clinic/api test",
+    "dev": "pnpm --filter @clinic/website dev",
     "dev:website": "pnpm --filter @clinic/website dev",
-    "dev:portal": "pnpm --filter @clinic/portal dev"
+    "build": "pnpm --filter @clinic/website build",
+    "typecheck": "pnpm --filter @clinic/website typecheck"
   }
 }

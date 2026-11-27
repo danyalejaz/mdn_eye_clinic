@@ -2,7 +2,6 @@
 import Base from "./Base.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
-import { portalUrl } from "../data/clinic";
 import type { ClinicProfile } from "../lib/catalog";
 
 interface Props {
@@ -15,7 +14,7 @@ const { title, description, label, clinic } = Astro.props;
 const clinicName = clinic?.name ?? "Mardan Eye Clinic";
 ---
 <Base title={`${title} | ${clinicName}`} {description}>
-  <SiteHeader {clinicName} {portalUrl} />
+  <SiteHeader {clinicName} />
   <main id="main-content" tabindex="-1">
     <header class="page-intro section-tint">
       <div class="wrap">
@@ -26,5 +25,5 @@ const clinicName = clinic?.name ?? "Mardan Eye Clinic";
     </header>
     <slot />
   </main>
-  <SiteFooter {clinicName} {portalUrl} phone={clinic?.phone ?? null} address={clinic?.address ?? "Street address not listed"} />
+  <SiteFooter {clinicName} phone={clinic?.phone ?? null} address={clinic?.address ?? "Street address not listed"} />
 </Base>
