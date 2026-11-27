@@ -4,6 +4,7 @@
   "private": true,
   "exports": {
     "./theme.css": "./theme.css",
+    "./brand.css": "./brand.css",
     "./favicon.svg": "./favicon.svg"
   }
 }

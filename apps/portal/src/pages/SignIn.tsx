@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "@tanstack/react-router";
-import { Mark, Notice, controlClass, primaryButtonClass } from "../components/ui";
+import { AppointmentLayout } from "../components/AppointmentLayout";
+import { Notice, controlClass, primaryButtonClass } from "../components/ui";
 import { loadSession } from "../session";
 
 export function SignIn({ booking }: { booking: { doctorId: string; slotId: string; date?: string } }) {
@@ -40,15 +41,12 @@ export function SignIn({ booking }: { booking: { doctorId: string; slotId: strin
   }
 
   return (
-    <div className="min-h-screen bg-canvas text-text font-body">
-      <main className="max-w-[32rem] mx-auto px-mobile-gutter py-3xl flex flex-col gap-xl">
-        <div className="flex items-center gap-sm">
-          <Mark />
-          <span className="font-title text-card-title text-ink">Book a visit</span>
-        </div>
-        <h1 className="font-headline text-sm-page-title text-ink">Patient sign-in</h1>
-        {error ? <Notice>{error}</Notice> : null}
-        <form onSubmit={(event) => void submit(event)} className="bg-surface border border-border rounded-lg p-xl flex flex-col gap-md">
+    <AppointmentLayout>
+      <main id="main-content" tabIndex={-1} className="portal-wrap portal-entry">
+        <form onSubmit={(event) => void submit(event)} className="portal-panel" aria-labelledby="sign-in-title">
+          <h1 id="sign-in-title">Patient sign-in</h1>
+          <p className="text-muted mb-md">{booking.slotId ? "Sign in to continue with the time you selected." : "Use your clinic patient account to continue."}</p>
+          {error ? <Notice>{error}</Notice> : null}
           <label className="flex flex-col gap-xs">
             <span className="font-label text-label-md text-ink">Email</span>
             <input className={controlClass} type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} />
@@ -59,7 +57,12 @@ export function SignIn({ booking }: { booking: { doctorId: string; slotId: strin
           </label>
           <button className={primaryButtonClass} type="submit" disabled={pending}>{pending ? "Signing in…" : "Continue"}</button>
         </form>
+        <section className="portal-intro" aria-labelledby="entry-title">
+          <p className="portal-eyebrow">Patient appointments</p>
+          <h2 id="entry-title">Your next visit starts here.</h2>
+          <p>Confirm a new appointment or manage a visit you’ve already booked.</p>
+        </section>
       </main>
-    </div>
+    </AppointmentLayout>
   );
 }

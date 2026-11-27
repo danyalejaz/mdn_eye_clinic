@@ -1,6 +1,5 @@
 import { createRootRoute, createRoute, createRouter, Outlet, redirect } from "@tanstack/react-router";
 import { PatientDashboard } from "./pages/PatientDashboard";
-import { PortalHome } from "./pages/PortalHome";
 import { SignIn } from "./pages/SignIn";
 import { loadSession } from "./session";
 
@@ -26,8 +25,8 @@ const indexRoute = createRoute({
     if (session.state === "ready" && session.actor.role === "patient") {
       throw redirect({ to: "/patient", search: { doctorId: "", slotId: "" } });
     }
+    throw redirect({ to: "/sign-in", search: { doctorId: "", slotId: "" } });
   },
-  component: PortalHome,
 });
 
 const signInRoute = createRoute({

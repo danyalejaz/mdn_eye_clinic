@@ -1,0 +1,12 @@
+:root {
+  --clinic-cobalt: #2646d6;
+  --clinic-cobalt-hover: #1832ad;
+  --clinic-ink: #111b38;
+  --clinic-navy: #111b41;
+  --clinic-muted: #4e5a73;
+  --clinic-canvas: #f5f7ff;
+  --clinic-tint: #f1f4ff;
+  --clinic-border: #dbe1ef;
+  --clinic-focus: #5879ff;
+  --clinic-font: "Manrope", system-ui, sans-serif;
+}

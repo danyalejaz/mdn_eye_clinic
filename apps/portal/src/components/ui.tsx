@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import mark from "@clinic/ui/favicon.svg?url";
 
 const tones = {
   success: "bg-success-soft text-success",
@@ -74,13 +75,5 @@ export const secondaryButtonClass =
   "inline-flex items-center justify-center gap-xs h-[44px] px-lg rounded-md bg-surface text-primary border border-control-border font-label text-label-md hover:bg-primary-soft disabled:opacity-60";
 
 export function Mark() {
-  return (
-    <span className="w-8 h-8 rounded-md bg-primary flex items-center justify-center text-on-primary" aria-hidden="true">
-      <svg className="w-5 h-5" viewBox="0 0 26 18" fill="none">
-        <path d="M1 9s4.5-7.5 12-7.5S25 9 25 9s-4.5 7.5-12 7.5S1 9 1 9Z" stroke="currentColor" strokeWidth="1.6" />
-        <circle cx="13" cy="9" r="3.7" fill="currentColor" />
-        <circle cx="15.3" cy="6.7" r="1.4" className="fill-primary" />
-      </svg>
-    </span>
-  );
+  return <img src={mark} width={40} height={40} alt="" className="shrink-0" />;
 }

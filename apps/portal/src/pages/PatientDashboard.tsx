@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, failureMessage, publicDoctors } from "../api";
-import { Mark, Notice, StatusBadge, controlClass, primaryButtonClass, secondaryButtonClass } from "../components/ui";
+import { AppointmentLayout } from "../components/AppointmentLayout";
+import { Notice, StatusBadge, controlClass, primaryButtonClass, secondaryButtonClass } from "../components/ui";
 import { businessToday, formatWhen, money } from "../format";
 import { clearSession } from "../session";
 import type { Actor, Appointment, OpenSlot, PublicDoctor } from "../types";
@@ -39,15 +40,16 @@ export function PatientDashboard({ actor, doctorId, slotId, initialDate }: { act
   }, [actor.role]);
 
   useEffect(() => {
-    if (!chosenDoctor) {
+    if (!chosenDoctor || !date) {
       setSlots([]);
       setLoadingSlots(false);
       return;
     }
     const params = new URLSearchParams({ from: date, to: date, doctorId: chosenDoctor });
     let active = true;
-    setLoadingSlots(true);
     const load = () => {
+      setSlots([]);
+      setLoadingSlots(true);
       void api<{ data: OpenSlot[] }>(`/api/v1/public/availability?${params}`)
         .then((body) => {
           if (active) setSlots(body.data);
@@ -68,7 +70,7 @@ export function PatientDashboard({ actor, doctorId, slotId, initialDate }: { act
       active = false;
       document.removeEventListener("visibilitychange", refresh);
     };
-  }, [chosenDoctor, date]);
+  }, [chosenDoctor, date, appointments]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -105,23 +107,17 @@ export function PatientDashboard({ actor, doctorId, slotId, initialDate }: { act
   const upcoming = appointments.filter((item) => item.status === "confirmed" && Date.parse(item.scheduledAt) > Date.now());
 
   return (
-    <div className="min-h-screen bg-canvas text-text font-body">
-      <header className="bg-surface border-b border-border">
-        <div className="max-w-public mx-auto px-mobile-gutter md:px-desktop-gutter h-[64px] flex items-center justify-between gap-md">
-          <div className="flex items-center gap-sm">
-            <Mark />
-            <span className="font-title text-card-title text-ink">Book a visit</span>
-          </div>
-          <button type="button" onClick={() => void signOut()} className={secondaryButtonClass}>Sign out</button>
+    <AppointmentLayout action={<button type="button" onClick={() => void signOut()} className={secondaryButtonClass}>Sign out</button>}>
+      <main id="main-content" tabIndex={-1} className="portal-wrap portal-dashboard">
+        <div className="portal-heading">
+          <p className="portal-eyebrow">Patient appointments</p>
+          <h1>Manage your visits.</h1>
+          <p className="text-muted">Book a new visit or check your upcoming appointments.</p>
         </div>
-      </header>
-      <main className="max-w-public mx-auto px-mobile-gutter md:px-desktop-gutter py-3xl flex flex-col gap-xl">
         {error ? <Notice>{error}</Notice> : null}
-        {!canBook ? (
-          <p className="font-body text-body-md text-muted">Appointment booking is available on patient accounts.</p>
-        ) : (
-          <section className="bg-surface border border-border rounded-lg p-xl flex flex-col gap-md">
-            <h1 className="font-headline text-section-title text-ink">Choose a time</h1>
+        {canBook ? <div className="portal-columns">
+          <section className="portal-panel" aria-labelledby="choose-time-title">
+            <h2 id="choose-time-title">Choose a time</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
               <label className="flex flex-col gap-xs">
                 <span className="font-label text-label-md text-ink">Doctor</span>
@@ -134,7 +130,7 @@ export function PatientDashboard({ actor, doctorId, slotId, initialDate }: { act
               </label>
               <label className="flex flex-col gap-xs">
                 <span className="font-label text-label-md text-ink">Date</span>
-                <input className={controlClass} type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+                <input className={controlClass} type="date" min={businessToday()} value={date} onChange={(event) => setDate(event.target.value)} />
               </label>
             </div>
             {loadingSlots ? (
@@ -143,7 +139,9 @@ export function PatientDashboard({ actor, doctorId, slotId, initialDate }: { act
                 <span className="shimmer h-11 rounded-lg" />
               </div>
             ) : slots.length === 0 ? (
-              <p className="font-body text-body-sm text-muted">No open slots for that doctor and date.</p>
+              <p className="font-body text-body-sm text-muted" role="status">
+                {!chosenDoctor ? "Choose a doctor to see available times." : !date ? "Choose a date to see available times." : "No open slots for that doctor and date."}
+              </p>
             ) : (
               <ul className="flex flex-col gap-sm">
                 {slots.map((slot) => (
@@ -168,11 +166,8 @@ export function PatientDashboard({ actor, doctorId, slotId, initialDate }: { act
               </ul>
             )}
           </section>
-        )}
-
-        {canBook ? (
-          <section className="flex flex-col gap-md">
-            <h2 className="font-headline text-section-title text-ink">Your appointments</h2>
+          <section className="portal-panel" aria-labelledby="my-appointments-title">
+            <h2 id="my-appointments-title">Your appointments</h2>
             {confirming ? (
               <article className="bg-surface border border-border rounded-lg p-xl">
                 <p className="font-title text-card-title text-ink">{confirming.doctor}</p>
@@ -186,7 +181,7 @@ export function PatientDashboard({ actor, doctorId, slotId, initialDate }: { act
                   <div>
                     <p className="font-title text-card-title text-ink">{item.doctorName ?? "Doctor"}</p>
                     <p className="font-body text-body-sm text-ink tabular-nums">{formatWhen(item.scheduledAt)}</p>
-                    <p className="font-caption text-caption text-muted tabular-nums">{item.reference} · {money(item.feeMinor)}</p>
+                    <p className="font-caption text-caption text-muted tabular-nums wrap-anywhere">{item.reference} · {money(item.feeMinor)}</p>
                   </div>
                   <StatusBadge status={item.status} />
                 </div>
@@ -205,8 +200,8 @@ export function PatientDashboard({ actor, doctorId, slotId, initialDate }: { act
               </article>
             ))}
           </section>
-        ) : null}
+        </div> : <p className="text-muted">Appointment booking is available on patient accounts.</p>}
       </main>
-    </div>
+    </AppointmentLayout>
   );
 }
