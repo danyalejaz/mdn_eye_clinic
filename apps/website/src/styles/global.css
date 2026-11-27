@@ -1,0 +1,4 @@
+@import "tailwindcss";
+@import "@clinic/ui/theme.css";
+
+@source "../**/*.{astro,html,js,ts}";

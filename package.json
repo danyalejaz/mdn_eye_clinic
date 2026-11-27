@@ -9,6 +9,8 @@
     "dev": "pnpm --filter @clinic/api dev",
     "build": "pnpm --filter @clinic/api build",
     "typecheck": "pnpm --filter @clinic/api typecheck",
-    "test": "pnpm --filter @clinic/api test"
+    "test": "pnpm --filter @clinic/api test",
+    "dev:website": "pnpm --filter @clinic/website dev",
+    "dev:portal": "pnpm --filter @clinic/portal dev"
   }
 }

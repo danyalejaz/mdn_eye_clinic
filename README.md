@@ -60,3 +60,20 @@ rescheduling take `expectedVersion` to prevent concurrent overwrites.
 
 Run `pnpm typecheck`, `pnpm test`, and `pnpm build` from the repository root.
 The build bundles the Worker with Wrangler's dry-run mode for local verification.
+
+## Frontend
+
+`apps/website` is the public Astro site and `apps/portal` is the React role portal.
+Shared visual tokens live in `packages/ui`. These screens use fictional demo records
+and the placeholder “Clinic Name”. They do not reserve appointments or read clinical data.
+
+```sh
+pnpm dev:website
+pnpm dev:portal
+```
+
+Website: http://127.0.0.1:4321  
+Portal: http://127.0.0.1:5173
+
+Set `PUBLIC_PORTAL_URL` when the portal is not on that address. Do not commit `.env`,
+`.dev.vars`, secrets, or real patient records.
