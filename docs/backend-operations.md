@@ -1,5 +1,21 @@
 # Backend operations
 
+## Same-origin local integration
+
+```sh
+pnpm install --frozen-lockfile
+pnpm --dir apps/api db:migrate:local
+pnpm --dir apps/api db:seed:local
+pnpm --filter @clinic/portal build
+pnpm --dir apps/api dev:portal-preview
+```
+
+The preview serves the current portal bundle at `http://127.0.0.1:8790`
+and dispatches `/api/*` to the backend before SPA routing. Set `AUTH_BASE_URL`
+to this exact URL and use a local-only auth secret to test sign-in. The preview
+configuration uses a dummy D1 ID and is for local use only. It does not replace
+the portal's sample data with API calls.
+
 ## Staging and production
 
 The checked-in Worker uses a local-emulation D1 identifier. Use an

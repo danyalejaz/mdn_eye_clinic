@@ -1,0 +1,92 @@
+---
+import Mark from "./Mark.astro";
+
+interface Props {
+  portalUrl: string;
+}
+
+const { portalUrl } = Astro.props;
+
+const links = [
+  { href: "#about", label: "About" },
+  { href: "#doctors", label: "Doctors" },
+  { href: "#services", label: "Services" },
+  { href: "#faq", label: "Patient resources" },
+  { href: "#contact", label: "Contact" },
+];
+---
+
+<div class="bg-ivory border-b border-editorial-border">
+  <div class="max-w-editorial mx-auto px-xl lg:px-4xl h-[40px] hidden sm:flex items-center justify-between gap-lg font-body text-caption text-editorial-muted">
+    <div class="flex items-center gap-lg">
+      <span>Mardan, Pakistan</span>
+      <span class="text-editorial-border" aria-hidden="true">|</span>
+      <span class="tabular-nums">Mon–Sat · 9:00 AM – 8:00 PM</span>
+    </div>
+    <div class="flex items-center gap-lg">
+      <a href="tel:+923000000001" class="tabular-nums hover:text-editorial-ink">+92 300 0000001</a>
+      <span class="text-editorial-border" aria-hidden="true">|</span>
+      <span>EN</span>
+    </div>
+  </div>
+  <div class="sm:hidden px-lg h-[36px] flex items-center justify-between font-body text-caption text-editorial-muted">
+    <span>Mardan, Pakistan</span>
+    <span class="tabular-nums">Mon–Sat · 9 AM – 8 PM</span>
+  </div>
+</div>
+
+<header class="bg-ivory border-b border-editorial-border sticky top-0 z-40">
+  <div class="max-w-editorial mx-auto px-lg lg:px-4xl h-[64px] lg:h-[76px] flex items-center justify-between gap-lg">
+    <a href="/" class="flex items-center gap-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus rounded-md">
+      <Mark />
+      <span class="font-editorial text-card-title text-editorial-ink tracking-tight">Clinic Name</span>
+    </a>
+
+    <nav aria-label="Primary navigation" class="hidden lg:flex items-center gap-2xl">
+      <a href="/" class="font-label text-label-md text-primary border-b border-primary pb-xs" aria-current="page">Home</a>
+      {
+        links.map((link) => (
+          <a href={link.href} class="font-body text-body-sm text-editorial-ink hover:text-primary transition-colors duration-quick">
+            {link.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="flex items-center gap-sm lg:gap-md">
+      <a
+        href={`${portalUrl}/patient`}
+        class="hidden sm:inline-flex items-center justify-center h-[44px] px-md font-label text-label-md text-editorial-ink hover:text-primary transition-colors duration-quick"
+      >
+        <span class="hidden lg:inline">Patient portal</span>
+        <span class="lg:hidden">Portal</span>
+      </a>
+      <a
+        href="#quick-book"
+        class="inline-flex items-center justify-center h-[40px] lg:h-[44px] px-md lg:px-xl rounded-md bg-primary text-on-primary font-label text-label-md hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 transition-colors duration-quick whitespace-nowrap"
+      >
+        <span class="lg:hidden">Book</span>
+        <span class="hidden lg:inline">Book appointment</span>
+      </a>
+      <button
+        id="mobile-menu-btn"
+        type="button"
+        aria-label="Open menu"
+        aria-expanded="false"
+        aria-controls="mobile-drawer"
+        class="lg:hidden inline-flex items-center justify-center w-[40px] h-[40px] rounded-md border border-editorial-border bg-surface text-editorial-ink"
+      >
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <nav id="mobile-drawer" aria-label="Mobile navigation" hidden class="lg:hidden border-t border-editorial-border bg-surface px-lg py-lg flex-col gap-sm">
+    <a href="#about" class="py-sm font-body text-body-md text-editorial-ink border-b border-editorial-border">About the clinic</a>
+    <a href="#services" class="py-sm font-body text-body-md text-editorial-ink border-b border-editorial-border">Medical services</a>
+    <a href="#doctors" class="py-sm font-body text-body-md text-editorial-ink border-b border-editorial-border">Our doctors</a>
+    <a href="#faq" class="py-sm font-body text-body-md text-editorial-ink border-b border-editorial-border">Questions &amp; answers</a>
+    <a href={`${portalUrl}/patient`} class="py-sm font-label text-label-md text-primary">Patient portal</a>
+  </nav>
+</header>

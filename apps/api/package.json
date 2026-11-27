@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --local",
+    "dev:portal-preview": "wrangler dev --local --ip 127.0.0.1 --port 8790 --config wrangler.portal-preview.jsonc",
     "build": "wrangler deploy --dry-run --outdir dist",
     "typecheck": "wrangler types && tsc --noEmit",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",

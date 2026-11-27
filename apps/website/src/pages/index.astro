@@ -1,0 +1,467 @@
+---
+import Base from "../layouts/Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { doctors, faqs, images, portalUrl, services } from "../data/clinic";
+
+const principles = [
+  ["Convenient appointment scheduling", "Reserve specific consultation times online or by phone without long uncertainty."],
+  ["Professional medical consultations", "Unhurried outpatient visits focused on listening and clear clinical guidance."],
+  ["Clear communication", "Transparent consultation fees, plain-language instructions, and written follow-up plans."],
+  ["Continuity of care", "Your longitudinal visit summaries and prescriptions stay organized for every return visit."],
+  ["Accessible patient services", "Designed for clarity across desktop and mobile devices for patients and families."],
+  ["Secure digital healthcare experience", "Role-restricted access ensures your released records and receipts remain private."],
+];
+
+const journey = [
+  ["01", "Choose your doctor", "Browse verified physician schedules, specialties, and transparent consultation fees before booking."],
+  ["02", "Book your appointment", "Reserve an available time online or through reception and receive your booking reference immediately."],
+  ["03", "Receive personalized care", "Check in with a quiet queue token and access your released visit summary and prescriptions online."],
+];
+---
+
+<Base
+  title="Clinic Name — Outpatient clinic in Mardan"
+  description="Scheduled outpatient consultations in Mardan. Book a visit, view consultation fees, and access released summaries in the patient portal."
+>
+  <SiteHeader portalUrl={portalUrl} />
+
+  <main id="main-content" class="flex-1 pb-24 lg:pb-0">
+    <section class="max-w-editorial mx-auto px-xl lg:px-4xl pt-3xl pb-4xl lg:pt-4xl lg:pb-5xl">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-2xl lg:gap-3xl items-end">
+        <div class="lg:col-span-6 flex flex-col gap-xl pb-md">
+          <div class="flex flex-col gap-lg">
+            <p class="font-body text-editorial-label uppercase text-primary">Modern healthcare. Personal attention.</p>
+            <h1 class="font-editorial text-editorial-hero-mobile lg:text-editorial-hero text-editorial-ink text-balance">
+              Care that puts you first.
+            </h1>
+            <p class="font-body text-body-lg text-editorial-muted max-w-[46ch] text-pretty">
+              Thoughtful medical care, experienced professionals and a simpler way to manage your health — right here in Mardan.
+            </p>
+          </div>
+          <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-sm sm:gap-md pt-xs">
+            <a href="#quick-book" class="inline-flex items-center justify-center h-[48px] px-xl rounded-md bg-primary text-on-primary font-label text-label-md hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 transition-colors duration-quick">
+              Book an appointment
+            </a>
+            <a href="#doctors" class="inline-flex items-center justify-center h-[48px] px-xl rounded-md bg-surface text-editorial-ink border border-editorial-border font-label text-label-md hover:border-primary hover:text-primary transition-colors duration-quick">
+              Explore our doctors
+            </a>
+          </div>
+          <div class="pt-lg border-t border-editorial-border flex flex-wrap items-center gap-lg font-body text-body-sm text-editorial-muted">
+            <span class="inline-flex items-center gap-xs">
+              <span class="w-2 h-2 rounded-full bg-primary" aria-hidden="true"></span>
+              Accepting scheduled outpatient visits
+            </span>
+            <span>Outpatient clinic · Not an emergency service</span>
+          </div>
+        </div>
+        <div class="lg:col-span-6">
+          <div class="relative">
+            <div class="overflow-hidden rounded-lg bg-sage">
+              <img src={images.consult} alt="Physician speaking attentively with a patient in a sunlit outpatient consultation room" class="w-full aspect-[4/3] object-cover" width="960" height="720" />
+            </div>
+            <div class="mt-md lg:mt-0 lg:absolute lg:-bottom-lg lg:left-lg bg-surface border border-editorial-border rounded-md px-lg py-md flex items-center justify-between gap-xl">
+              <div class="flex flex-col">
+                <span class="font-body text-editorial-label uppercase text-editorial-muted">Location</span>
+                <span class="font-label text-label-md text-editorial-ink">Mardan Outpatient Clinic</span>
+              </div>
+              <span class="font-body text-body-sm text-primary tabular-nums">Mon–Sat · 9:00 AM</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="quick-book" class="max-w-editorial mx-auto px-xl lg:px-4xl pb-4xl lg:pb-5xl">
+      <div class="bg-surface border border-editorial-border rounded-lg p-lg lg:p-xl">
+        <h2 class="font-editorial text-card-title text-editorial-ink mb-md lg:sr-only">Check appointment availability</h2>
+        <form id="availability-form" class="grid grid-cols-1 md:grid-cols-4 gap-lg items-end">
+          <label class="flex flex-col gap-xs md:border-r md:border-editorial-border md:pr-lg">
+            <span class="font-body text-editorial-label uppercase text-editorial-muted">Department</span>
+            <select name="department" class="h-[44px] px-md md:px-sm rounded-md md:rounded-sm border border-editorial-border md:border-0 bg-ivory md:bg-transparent font-body text-body-sm md:text-body-md text-editorial-ink focus:ring-2 focus:ring-focus">
+              <option>General Medicine</option>
+              <option>Family Medicine</option>
+              <option>Preventive Care</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-xs md:border-r md:border-editorial-border md:pr-lg">
+            <span class="font-body text-editorial-label uppercase text-editorial-muted">Doctor</span>
+            <select name="doctor" class="h-[44px] px-md md:px-sm rounded-md md:rounded-sm border border-editorial-border md:border-0 bg-ivory md:bg-transparent font-body text-body-sm md:text-body-md text-editorial-ink focus:ring-2 focus:ring-focus">
+              <option>Any available physician</option>
+              <option>Demo Doctor A</option>
+              <option>Demo Doctor B</option>
+              <option>Demo Doctor C</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-xs">
+            <span class="font-body text-editorial-label uppercase text-editorial-muted">Preferred date</span>
+            <input type="date" name="date" value="2026-12-01" class="h-[44px] px-md md:px-sm rounded-md md:rounded-sm border border-editorial-border md:border-0 bg-ivory md:bg-transparent font-body text-body-sm md:text-body-md text-editorial-ink tabular-nums focus:ring-2 focus:ring-focus" />
+          </label>
+          <button type="submit" class="h-[48px] px-xl rounded-md bg-teal-dark text-on-primary font-label text-label-md hover:bg-primary transition-colors duration-quick w-full">
+            Check availability
+          </button>
+        </form>
+        <p id="availability-note" hidden class="mt-md pt-md border-t border-editorial-border font-body text-body-sm text-primary">
+          Live appointment slots are fetched from the clinic schedule when booking opens. A selected time is not reserved until the patient portal confirms it.
+        </p>
+      </div>
+    </section>
+
+    <section id="about" class="border-t border-editorial-border bg-surface">
+      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl flex flex-col gap-3xl">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-xl lg:gap-3xl items-start">
+          <div class="lg:col-span-7 flex flex-col gap-md">
+            <p class="font-body text-editorial-label uppercase text-primary">A better healthcare experience</p>
+            <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-editorial-ink text-balance">
+              Healthcare built around people, not just appointments.
+            </h2>
+          </div>
+          <div class="lg:col-span-5 flex flex-col gap-lg pt-sm">
+            <p class="font-body text-body-md text-editorial-muted text-pretty">
+              We focus on unhurried outpatient consultations, predictable scheduling, and clear continuity of care. From booking your visit to reviewing your released medical summary, every step is designed to feel calm and transparent.
+            </p>
+            <a href="#facilities" class="inline-flex items-center gap-xs font-label text-label-md text-primary hover:underline w-fit">
+              <span>Discover our clinic</span>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"></path></svg>
+            </a>
+          </div>
+        </div>
+        <div class="overflow-hidden rounded-lg bg-sage">
+          <img src={images.waiting} alt="Minimalist outpatient clinic reception and sunlit waiting area" class="w-full aspect-video lg:aspect-[21/9] object-cover" width="1600" height="686" />
+        </div>
+      </div>
+    </section>
+
+    <section id="services" class="border-t border-editorial-border bg-ivory">
+      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl flex flex-col gap-2xl">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-lg">
+          <div class="flex flex-col gap-sm">
+            <p class="font-body text-editorial-label uppercase text-primary">Medical services</p>
+            <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-editorial-ink text-balance">
+              Expert care for your everyday health.
+            </h2>
+          </div>
+          <a href="#quick-book" class="inline-flex items-center gap-xs font-label text-label-md text-editorial-ink hover:text-primary transition-colors duration-quick">
+            <span>Explore all services</span>
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+          </a>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-2xl items-start">
+          <div class="lg:col-span-7 divide-y divide-editorial-border border-y border-editorial-border">
+            {
+              services.map((service) => (
+                <button type="button" data-service-img={service.image} data-service-alt={service.title} class="service-row w-full text-left py-lg lg:py-xl flex items-start justify-between gap-lg group hover:bg-surface px-md -mx-md rounded-md transition-colors duration-quick">
+                  <div class="flex items-start gap-lg lg:gap-xl">
+                    <span class="font-editorial text-body-sm text-primary tabular-nums pt-xs">{service.id}</span>
+                    <div class="flex flex-col gap-xs">
+                      <h3 class="font-editorial text-card-title lg:text-editorial-sub text-editorial-ink group-hover:text-primary transition-colors duration-quick">{service.title}</h3>
+                      <p class="font-body text-body-sm text-editorial-muted max-w-md">{service.summary}</p>
+                    </div>
+                  </div>
+                  <svg class="w-5 h-5 text-editorial-muted group-hover:text-primary shrink-0 mt-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                </button>
+              ))
+            }
+          </div>
+          <div class="lg:col-span-5 hidden lg:block">
+            <div class="overflow-hidden rounded-lg bg-sage border border-editorial-border">
+              <img id="service-preview-img" src={images.consult} alt="Outpatient consultation service preview" class="w-full aspect-[4/5] object-cover" width="800" height="1000" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="doctors" class="border-t border-editorial-border bg-surface">
+      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl flex flex-col gap-2xl">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-lg">
+          <div class="flex flex-col gap-sm">
+            <p class="font-body text-editorial-label uppercase text-primary">Our physicians</p>
+            <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-editorial-ink text-balance">
+              Meet the people behind your care.
+            </h2>
+          </div>
+          <p class="font-body text-body-sm text-editorial-muted max-w-sm">Demonstration profiles shown until approved clinic credentials are published.</p>
+        </div>
+        <div class="flex gap-lg overflow-x-auto pb-sm snap-x md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
+          {
+            doctors.map((doctor) => (
+              <article class="w-[260px] shrink-0 snap-start md:w-auto flex flex-col gap-lg">
+                <div class="overflow-hidden rounded-lg bg-sage">
+                  <img src={doctor.image} alt={doctor.alt} class="w-full aspect-[4/5] object-cover" width="640" height="800" />
+                </div>
+                <div class="flex flex-col gap-xs">
+                  <h3 class="font-editorial text-card-title lg:text-section-title text-editorial-ink">{doctor.name}</h3>
+                  <p class="font-body text-body-sm text-primary">{doctor.specialty}</p>
+                  <p class="font-body text-body-sm text-editorial-muted tabular-nums">{doctor.hours}</p>
+                </div>
+                <div class="flex items-center gap-lg pt-xs border-t border-editorial-border">
+                  <a href="#quick-book" class="font-label text-label-md text-primary hover:underline">Book appointment</a>
+                  <a href="#doctors" class="font-body text-body-sm text-editorial-muted hover:text-editorial-ink">View profile</a>
+                </div>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-teal-dark text-on-primary">
+      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl flex flex-col gap-3xl">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-lg border-b border-primary pb-2xl">
+          <div class="flex flex-col gap-sm">
+            <p class="font-body text-editorial-label uppercase text-sage-accent">Patient journey</p>
+            <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-on-primary">Your visit, made simpler.</h2>
+          </div>
+          <a href="#quick-book" class="inline-flex items-center justify-center h-[48px] px-xl rounded-md bg-surface text-teal-dark font-label text-label-md hover:bg-sage transition-colors duration-quick shrink-0">
+            Book an appointment
+          </a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2xl">
+          {
+            journey.map(([step, title, copy]) => (
+              <div class="flex flex-col gap-md pt-lg border-t border-primary">
+                <span class="font-editorial text-section-title md:text-headline-lg text-sage-accent tabular-nums">{step}</span>
+                <h3 class="font-editorial text-card-title md:text-section-title text-on-primary">{title}</h3>
+                <p class="font-body text-body-sm md:text-body-md text-sage">{copy}</p>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-ivory border-b border-editorial-border">
+      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl grid grid-cols-1 lg:grid-cols-12 gap-2xl lg:gap-3xl items-center">
+        <div class="lg:col-span-5 flex flex-col gap-xl">
+          <div class="flex flex-col gap-sm">
+            <p class="font-body text-editorial-label uppercase text-primary">Digital patient portal</p>
+            <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-editorial-ink text-balance">
+              Your healthcare, always within reach.
+            </h2>
+            <p class="font-body text-body-md text-editorial-muted text-pretty">
+              Access your appointments, approved prescriptions, visit history and payment receipts through a secure patient portal.
+            </p>
+          </div>
+          <ul class="flex flex-col gap-sm border-y border-editorial-border py-lg font-body text-body-sm text-editorial-ink">
+            <li class="flex items-center gap-sm"><span class="text-primary" aria-hidden="true">✓</span><span>Manage upcoming and past appointments</span></li>
+            <li class="flex items-center gap-sm"><span class="text-primary" aria-hidden="true">✓</span><span>View approved prescriptions</span></li>
+            <li class="flex items-center gap-sm"><span class="text-primary" aria-hidden="true">✓</span><span>Access released medical records</span></li>
+            <li class="flex items-center gap-sm"><span class="text-primary" aria-hidden="true">✓</span><span>Receive appointment reminders and download receipts</span></li>
+          </ul>
+          <div class="flex flex-wrap items-center gap-md">
+            <a href={`${portalUrl}/patient`} class="inline-flex items-center justify-center h-[48px] px-xl rounded-md bg-primary text-on-primary font-label text-label-md hover:bg-primary-hover">
+              Explore patient portal
+            </a>
+            <a href={`${portalUrl}/patient`} class="inline-flex items-center justify-center h-[48px] px-lg font-label text-label-md text-editorial-ink hover:text-primary">
+              Sign in to your account
+            </a>
+          </div>
+        </div>
+        <div class="lg:col-span-7 bg-sage rounded-xl p-xl lg:p-2xl border border-editorial-border">
+          <div class="bg-surface border border-editorial-border rounded-lg p-xl flex flex-col gap-lg">
+            <div class="flex items-center justify-between border-b border-editorial-border pb-md gap-md">
+              <div>
+                <span class="font-caption text-caption text-editorial-muted">Sample Portal Preview</span>
+                <p class="font-label text-label-md text-editorial-ink">Sample Patient 01 · <span class="tabular-nums">MRN-DEMO-001</span></p>
+              </div>
+              <span class="inline-flex items-center px-md py-xs rounded-full bg-success-soft text-success font-caption text-caption">Confirmed</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
+              <div class="p-md rounded-md bg-ivory border border-editorial-border">
+                <span class="font-caption text-caption text-editorial-muted">Next appointment</span>
+                <p class="font-label text-label-md text-editorial-ink tabular-nums">Tue, 1 Dec 2026 · 9:00 AM</p>
+                <p class="font-body text-body-sm text-editorial-muted">Demo Doctor A</p>
+              </div>
+              <div class="p-md rounded-md bg-ivory border border-editorial-border">
+                <span class="font-caption text-caption text-editorial-muted">Approved prescription</span>
+                <p class="font-label text-label-md text-editorial-ink tabular-nums">RX-2026-000012</p>
+                <p class="font-body text-body-sm text-primary">PDF ready for download</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="facilities" class="bg-surface border-b border-editorial-border">
+      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl flex flex-col gap-2xl">
+        <div class="flex flex-col gap-sm max-w-2xl">
+          <p class="font-body text-editorial-label uppercase text-primary">Clinic environment</p>
+          <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-editorial-ink text-balance">
+            A space designed around your comfort.
+          </h2>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-xl items-stretch">
+          <div class="lg:col-span-7 overflow-hidden rounded-lg bg-sage">
+            <img src={images.entrance} alt="Contemporary outpatient clinic entrance and courtyard" class="w-full h-full object-cover min-h-[280px]" width="1200" height="800" />
+          </div>
+          <div class="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 lg:grid-rows-2 gap-xl">
+            <div class="overflow-hidden rounded-lg bg-sage min-h-[180px]">
+              <img src={images.waiting} alt="Quiet clinic reception and waiting lounge" class="w-full h-full object-cover min-h-[180px]" width="800" height="500" />
+            </div>
+            <div class="overflow-hidden rounded-lg bg-sage min-h-[180px]">
+              <img src={images.consult} alt="Private outpatient consultation room" class="w-full h-full object-cover min-h-[180px]" width="800" height="500" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-ivory border-b border-editorial-border">
+      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl grid grid-cols-1 lg:grid-cols-12 gap-2xl items-start">
+        <div class="lg:col-span-5 flex flex-col gap-sm">
+          <p class="font-body text-editorial-label uppercase text-primary">Our principles</p>
+          <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-editorial-ink text-balance">
+            A more thoughtful approach to care.
+          </h2>
+        </div>
+        <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-x-2xl gap-y-xl">
+          {
+            principles.map(([title, copy]) => (
+              <div class="pt-md border-t border-editorial-border flex flex-col gap-xs">
+                <h3 class="font-editorial text-card-title text-editorial-ink">{title}</h3>
+                <p class="font-body text-body-sm text-editorial-muted">{copy}</p>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="bg-surface border-b border-editorial-border">
+      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl grid grid-cols-1 lg:grid-cols-12 gap-2xl items-start">
+        <div class="lg:col-span-5 flex flex-col gap-md">
+          <p class="font-body text-editorial-label uppercase text-primary">FAQ</p>
+          <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-editorial-ink text-balance">
+            Answers before your visit.
+          </h2>
+          <p class="font-body text-body-md text-editorial-muted max-w-sm">Practical details on booking, arrivals, and accessing your records.</p>
+          <a href="#contact" class="font-label text-label-md text-primary hover:underline w-fit pt-xs">Contact reception</a>
+        </div>
+        <div class="lg:col-span-7 divide-y divide-editorial-border border-y border-editorial-border">
+          {
+            faqs.map((item) => (
+              <div class="faq-item py-lg">
+                <button type="button" aria-expanded={item.open ? "true" : "false"} class="faq-toggle w-full flex items-center justify-between gap-md text-left font-editorial text-card-title text-editorial-ink">
+                  <span>{item.question}</span>
+                  <span class="faq-icon text-primary shrink-0" aria-hidden="true">{item.open ? "–" : "+"}</span>
+                </button>
+                <p class:list={["faq-panel mt-sm font-body text-body-sm text-editorial-muted", !item.open && "hidden"]}>{item.answer}</p>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="bg-ivory">
+      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl grid grid-cols-1 lg:grid-cols-12 gap-2xl items-stretch">
+        <div class="lg:col-span-5 flex flex-col justify-between gap-xl">
+          <div class="flex flex-col gap-md">
+            <p class="font-body text-editorial-label uppercase text-primary">Visit us</p>
+            <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-sub text-editorial-ink">Clinic Name · Mardan</h2>
+            <p class="font-body text-body-md text-editorial-muted">Address placeholder, Mardan, Khyber Pakhtunkhwa, Pakistan</p>
+          </div>
+          <div class="flex flex-col gap-md border-y border-editorial-border py-lg font-body text-body-sm">
+            <div class="flex justify-between gap-md"><span class="text-editorial-muted">Opening hours</span><span class="text-editorial-ink tabular-nums text-right">Mon–Sat · 9:00 AM – 8:00 PM</span></div>
+            <div class="flex justify-between gap-md"><span class="text-editorial-muted">Phone</span><a href="tel:+923000000001" class="text-editorial-ink tabular-nums">+92 300 0000001</a></div>
+            <div class="flex justify-between gap-md"><span class="text-editorial-muted">WhatsApp</span><span class="text-editorial-ink tabular-nums">+92 300 0000002</span></div>
+          </div>
+          <div class="flex flex-wrap gap-md">
+            <a href="tel:+923000000001" class="inline-flex items-center justify-center h-[44px] px-lg rounded-md bg-primary text-on-primary font-label text-label-md hover:bg-primary-hover">Call reception</a>
+            <a href="mailto:contact@clinic.example.test" class="inline-flex items-center justify-center h-[44px] px-lg rounded-md bg-surface text-editorial-ink border border-editorial-border font-label text-label-md hover:border-primary">Contact reception</a>
+          </div>
+        </div>
+        <div class="lg:col-span-7 bg-sage border border-editorial-border rounded-lg p-2xl flex flex-col items-center justify-center text-center gap-md min-h-[280px]">
+          <svg class="w-8 h-8 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
+          <h3 class="font-editorial text-card-title text-editorial-ink">Privacy-first map preview</h3>
+          <p id="map-copy" class="font-body text-body-sm text-editorial-ink max-w-sm">Interactive map tiles load only when requested to keep the first view fast. The street address is still a placeholder pending clinic approval.</p>
+          <button id="map-load" type="button" class="inline-flex items-center justify-center h-[44px] px-lg rounded-md bg-surface text-primary border border-editorial-border font-label text-label-md hover:bg-primary-soft">
+            Load interactive map
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-sage border-t border-editorial-border">
+      <div class="max-w-editorial mx-auto px-xl lg:px-4xl py-4xl lg:py-5xl flex flex-col lg:flex-row lg:items-end justify-between gap-xl">
+        <div class="flex flex-col gap-md max-w-2xl">
+          <h2 class="font-editorial text-editorial-section-mobile lg:text-editorial-section text-editorial-ink text-balance">
+            Your next step towards better care.
+          </h2>
+          <p class="font-body text-body-lg text-editorial-ink">Find the right doctor and schedule your visit at a time that works for you.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-md shrink-0">
+          <a href="#quick-book" class="inline-flex items-center justify-center h-[48px] px-xl rounded-md bg-primary text-on-primary font-label text-label-md hover:bg-primary-hover">Book an appointment</a>
+          <a href="#contact" class="inline-flex items-center justify-center h-[48px] px-xl rounded-md bg-surface text-editorial-ink border border-editorial-border font-label text-label-md hover:border-primary">Contact our reception</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter portalUrl={portalUrl} />
+
+  <div class="lg:hidden fixed bottom-0 inset-x-0 bg-surface border-t border-editorial-border px-lg py-sm flex items-center justify-between gap-md z-30">
+    <div class="flex flex-col">
+      <span class="font-label text-label-md text-editorial-ink">Outpatient visits</span>
+      <span class="font-caption text-caption text-editorial-muted tabular-nums">Mon–Sat · Mardan</span>
+    </div>
+    <a href="#quick-book" class="inline-flex items-center justify-center h-[44px] px-lg rounded-md bg-primary text-on-primary font-label text-label-md">Book appointment</a>
+  </div>
+
+<script>
+  const menuButton = document.getElementById("mobile-menu-btn");
+  const drawer = document.getElementById("mobile-drawer");
+  menuButton?.addEventListener("click", () => {
+    if (!drawer || !menuButton) return;
+    const willOpen = drawer.hasAttribute("hidden");
+    drawer.toggleAttribute("hidden", !willOpen);
+    drawer.classList.toggle("flex", willOpen);
+    menuButton.setAttribute("aria-expanded", String(willOpen));
+    menuButton.setAttribute("aria-label", willOpen ? "Close menu" : "Open menu");
+  });
+  drawer?.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", () => {
+      drawer.setAttribute("hidden", "");
+      drawer.classList.remove("flex");
+      menuButton?.setAttribute("aria-expanded", "false");
+      menuButton?.setAttribute("aria-label", "Open menu");
+    });
+  });
+
+  document.getElementById("availability-form")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    document.getElementById("availability-note")?.removeAttribute("hidden");
+  });
+
+  document.querySelectorAll<HTMLButtonElement>(".service-row").forEach((button) => {
+    button.addEventListener("click", () => {
+      const image = document.getElementById("service-preview-img");
+      const next = button.dataset.serviceImg;
+      if (image instanceof HTMLImageElement && next) {
+        image.src = next;
+        image.alt = button.dataset.serviceAlt ?? "Service preview";
+      }
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>(".faq-toggle").forEach((button) => {
+    button.addEventListener("click", () => {
+      const panel = button.parentElement?.querySelector(".faq-panel");
+      const icon = button.querySelector(".faq-icon");
+      const expanded = button.getAttribute("aria-expanded") === "true";
+      button.setAttribute("aria-expanded", String(!expanded));
+      panel?.classList.toggle("hidden", expanded);
+      if (icon) icon.textContent = expanded ? "+" : "–";
+    });
+  });
+
+  document.getElementById("map-load")?.addEventListener("click", () => {
+    const copy = document.getElementById("map-copy");
+    if (copy) {
+      copy.textContent = "The interactive map stays off until the clinic approves a street address. Call reception for directions in the meantime.";
+    }
+  });
+</script>
+</Base>
