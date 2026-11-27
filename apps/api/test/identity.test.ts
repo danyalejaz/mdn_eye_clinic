@@ -8,7 +8,7 @@ afterAll(async () => { await platform?.dispose(); });
 it("requires a real session and an active clinic account", async () => {
   const path = "/api/v1/me";
   expect((await platform.request(path)).status).toBe(401);
-  expect((await platform.request("/api/auth/sign-up/email", { body: {} })).status).toBe(404);
+  expect((await platform.request("/api/auth/sign-up/email", { body: {} })).status).toBe(503);
   const email = "patient@example.test";
   const userId = await platform.account(email, "patient");
   const signedIn = await platform.request("/api/auth/sign-in/email", { body: { email, password } });

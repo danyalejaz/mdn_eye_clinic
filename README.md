@@ -44,8 +44,9 @@ Set `AUTH_BASE_URL` to the exact portal origin and set `BETTER_AUTH_SECRET` to
 a random secret of at least 32 characters (an ignored `apps/api/.dev.vars` is
 appropriate for local use). Staff must complete authenticator MFA on each
 session before using clinic APIs. Application roles come from `clinic_accounts`.
-The public Better Auth signup route is disabled; accounts must be provisioned
-through a trusted server workflow. See `/api/v1/me` for the current clinic scope.
+Set `AUTH_EMAIL_FROM` to an approved Resend sender and supply `AUTH_EMAIL_API_KEY`
+as a secret to enable patient signup and email recovery. Without both, those
+endpoints return 503. Read `/api/v1/me` for the current clinic scope.
 
 ## Appointments
 
@@ -64,7 +65,10 @@ with `CLINIC_BOOTSTRAP_EMAIL`, `CLINIC_BOOTSTRAP_NAME`, and
 only to local D1 and refuses to create a second bootstrap administrator.
 Sign in, enroll an authenticator, then use `/api/v1/admin/accounts` to
 provision staff or link a patient account to a record after staff verify identity.
-Public signup is disabled; the API does not infer identity from a shared phone.
+Self-registration creates a new record after email verification. It never
+matches by name, email or phone to an existing clinic chart. Existing patients
+should ask the clinic to provision their linked account. Unverified staff and
+administratively provisioned accounts require staff-assisted recovery.
 
 The audit API returns action and resource metadata, not passwords, drafts or
 clinical notes. Backup status reports `not_configured` until a verified backup
@@ -99,6 +103,13 @@ Local PDFs are rendered on demand and require authorization on every request.
 Issued prescriptions and receipts retain the names recorded at approval or payment.
 The current English print font returns `DOCUMENT_FONT_UNSUPPORTED` for text
 it cannot render; it never substitutes or drops clinical text.
+
+For email recovery, send `{email}` to `POST /api/auth/request-password-reset`.
+If eligible, the patient receives `/reset-password#token=…`; the portal should
+read the fragment, remove it from the address bar, and submit `{token,
+newPassword}` to `POST /api/auth/reset-password`. The fragment is not sent to
+the page server. Tokens expire after 30 minutes, and reset revokes existing
+sessions. The reset screen still needs to be connected by the frontend owner.
 
 ## Verify changes
 

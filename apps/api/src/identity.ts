@@ -1,11 +1,16 @@
 import { betterAuth } from "better-auth";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import type { Context, MiddlewareHandler } from "hono";
+import { authMailConfigured, sendAuthMail } from "./auth-mail";
+import { provisionVerifiedPatient } from "./patient-identity";
 
 export type Role = "patient" | "receptionist" | "doctor" | "admin";
 export type Actor = { userId: string; role: Role; doctorId: string | null; patientId: string | null };
 export type ApiEnv = {
-  Bindings: Pick<Env, "DB"> & { AUTH_BASE_URL?: string; BETTER_AUTH_SECRET?: string };
+  Bindings: Pick<Env, "DB"> & {
+    AUTH_BASE_URL?: string; BETTER_AUTH_SECRET?: string;
+    AUTH_EMAIL_API_KEY?: string; AUTH_EMAIL_FROM?: string;
+  };
   Variables: { requestId: string; actor: Actor };
 };
 
@@ -23,7 +28,38 @@ export function getAuth(env: ApiEnv["Bindings"]) {
     secret: env.BETTER_AUTH_SECRET,
     telemetry: { enabled: false },
     logger: { disabled: true },
-    emailAndPassword: { enabled: true, autoSignIn: false, minPasswordLength: 12 },
+    emailAndPassword: {
+      enabled: true, autoSignIn: false, minPasswordLength: 12, maxPasswordLength: 128,
+      revokeSessionsOnPasswordReset: true,
+      resetPasswordTokenExpiresIn: 1800,
+      sendResetPassword: authMailConfigured(env) ? async ({ user, token }) => {
+        if (!user.emailVerified) return;
+        const account = await env.DB.prepare("SELECT active FROM clinic_accounts WHERE user_id = ?")
+          .bind(user.id).first<{ active: number }>();
+        if (account?.active === 0) return;
+        const link = new URL("/reset-password", baseURL);
+        link.hash = new URLSearchParams({ token }).toString();
+        // Keep the public reset response indistinguishable if delivery fails.
+        await sendAuthMail(env, user.email, "Reset your clinic password", link).catch(() => {
+          console.error({ event: "auth.password_reset.delivery_failed" });
+        });
+      } : undefined,
+    },
+    emailVerification: authMailConfigured(env) ? {
+      sendOnSignUp: true,
+      expiresIn: 1800,
+      sendVerificationEmail: async ({ user, token }) => {
+        // Provisioned users cannot use public resend to claim an unverified staff or patient identity.
+        const account = await env.DB.prepare("SELECT 1 FROM clinic_accounts WHERE user_id = ?").bind(user.id).first();
+        if (account) return;
+        const link = new URL("/api/auth/verify-email", baseURL);
+        link.searchParams.set("token", token);
+        await sendAuthMail(env, user.email, "Verify your clinic email", link).catch(() => {
+          console.error({ event: "auth.email_verification.delivery_failed" });
+        });
+      },
+      afterEmailVerification: (user) => provisionVerifiedPatient(env.DB, user.id),
+    } : undefined,
     advanced: { useSecureCookies: !local, ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] } },
     rateLimit: { enabled: true, storage: "database" },
     session: { additionalFields: { mfaVerified: { type: "boolean", defaultValue: false, input: false } } },
@@ -53,11 +89,17 @@ export const requireActor: MiddlewareHandler<ApiEnv> = async (c, next) => {
   const identity = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!identity) return apiError(c, 401, "AUTH_REQUIRED", "Sign in to continue.");
 
-  const actor = await c.env.DB.prepare(`
+  const lookup = c.env.DB.prepare(`
     SELECT a.user_id AS userId, a.role, a.doctor_id AS doctorId, p.id AS patientId
     FROM clinic_accounts a LEFT JOIN patients p ON p.user_id = a.user_id
     WHERE a.user_id = ? AND a.active = 1
-  `).bind(identity.user.id).first<Actor>();
+  `).bind(identity.user.id);
+  let actor = await lookup.first<Actor>();
+  if (!actor && identity.user.emailVerified &&
+      !await c.env.DB.prepare("SELECT 1 FROM clinic_accounts WHERE user_id = ?").bind(identity.user.id).first()) {
+    await provisionVerifiedPatient(c.env.DB, identity.user.id);
+    actor = await lookup.first<Actor>();
+  }
 
   if (!actor || (actor.role !== "patient" && (!identity.user.twoFactorEnabled || !identity.session.mfaVerified))) {
     return apiError(c, 403, "FORBIDDEN", "This account is not authorized for the requested operation.");
@@ -85,15 +127,36 @@ const authRoutes = new Set([
   "POST /sign-in/email", "POST /sign-out",
   "POST /two-factor/enable", "POST /two-factor/verify-totp", "POST /two-factor/verify-backup-code",
 ]);
+const selfServiceRoutes = new Set([
+  "POST /sign-up/email", "POST /send-verification-email", "GET /verify-email",
+  "POST /request-password-reset", "POST /reset-password",
+]);
 
 export async function handleAuth(c: Context<ApiEnv>) {
-  if (!authRoutes.has(`${c.req.method} ${c.req.path.slice("/api/auth".length)}`)) return c.notFound();
+  const route = `${c.req.method} ${c.req.path.slice("/api/auth".length)}`;
+  if (!authRoutes.has(route) && !selfServiceRoutes.has(route)) return c.notFound();
   if (c.req.method === "POST" && (!c.env.AUTH_BASE_URL ||
       c.req.header("Origin") !== new URL(c.env.AUTH_BASE_URL).origin)) {
     return apiError(c, 403, "FORBIDDEN", "Request origin is not authorized.");
   }
+  if (selfServiceRoutes.has(route) && !authMailConfigured(c.env)) {
+    return apiError(c, 503, "TEMPORARILY_UNAVAILABLE", "Email-based account services are unavailable.");
+  }
+  if (route === "POST /sign-up/email") {
+    const body: unknown = await c.req.raw.clone().json().catch(() => null);
+    if (!body || typeof body !== "object" || Array.isArray(body) ||
+        Object.keys(body).some((key) => !["name", "email", "password"].includes(key)) ||
+        !("name" in body) || typeof body.name !== "string" ||
+        !body.name.trim() || body.name.length > 120) {
+      return apiError(c, 422, "VALIDATION_FAILED", "Enter a valid name, email, and password.");
+    }
+  }
+  if (route === "GET /verify-email") c.header("Referrer-Policy", "no-referrer");
   const response = await getAuth(c.env).handler(c.req.raw);
   if (!response.ok) return response;
+  if (route === "POST /sign-up/email") {
+    return c.json({ status: true, message: "Check your email for account verification instructions." }, 202);
+  }
   const data = await response.json<Record<string, unknown>>();
   const { token: _token, session: _session, ...safeData } = data;
   const headers = new Headers(response.headers);
