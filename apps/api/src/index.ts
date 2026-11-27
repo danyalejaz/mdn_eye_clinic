@@ -8,6 +8,7 @@ import { publicCatalog } from "./public-catalog";
 import { handleAuth, requireActor, type ApiEnv } from "./identity";
 import { reception } from "./reception";
 import { prescriptions } from "./prescriptions";
+import { patientUpdates } from "./patient-updates";
 
 const app = new Hono<ApiEnv>();
 
@@ -33,6 +34,7 @@ app.route("/api/v1", reception);
 app.route("/api/v1", clinical);
 app.route("/api/v1", prescriptions);
 app.route("/api/v1", billing);
+app.route("/api/v1", patientUpdates);
 app.route("/api/v1/admin", admin);
 app.route("/api/v1/appointments", appointments);
 app.on(["GET", "POST"], "/api/auth/*", handleAuth);

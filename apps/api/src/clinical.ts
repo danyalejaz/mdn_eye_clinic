@@ -105,10 +105,10 @@ clinical.post("/encounters/:id/:action{amendments|release}", requireActor, docto
   const id = release ? encounterId : crypto.randomUUID();
   const write = release ? db.prepare(`
     INSERT INTO released_summaries (encounter_id, summary, released_by, released_at)
-    VALUES (?, ?, ?, ?) ON CONFLICT(encounter_id) DO NOTHING
+    VALUES (?, ?, ?, ?) ON CONFLICT(encounter_id) DO NOTHING RETURNING encounter_id
   `).bind(encounterId, body.summary, actor.userId, now) : db.prepare(`
     INSERT INTO encounter_amendments (id, encounter_id, reason, correction, author_id, created_at)
-    VALUES (?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?) RETURNING id
   `).bind(id, encounterId, body.reason, body.correction, actor.userId, now);
   // The audit statement only records a release when the release insert changed a row.
   const auditWrite = db.prepare(`
@@ -116,7 +116,7 @@ clinical.post("/encounters/:id/:action{amendments|release}", requireActor, docto
     SELECT ?, ?, 'encounter', ?, ?, ? WHERE changes() = 1
   `).bind(actor.userId, release ? "encounter.release" : "encounter.amend", encounterId, c.get("requestId"), now);
   const [result] = await db.batch([write, auditWrite]);
-  if (result.meta.changes !== 1) return conflict(c);
+  if (!result.results.length) return conflict(c);
   return c.json({ data: { id, encounterId, createdAt: now } }, 201);
 });
 

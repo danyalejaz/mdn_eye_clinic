@@ -269,6 +269,46 @@ paths:
         "200": &token { $ref: "#/components/responses/QueueToken" }
         "201": *token
         default: *error
+  /appointments/{id}/no-show:
+    parameters: *id
+    post:
+      operationId: markAppointmentNoShow
+      summary: Mark an overdue, unarrived scheduled appointment as a no-show at reception
+      security: *session
+      requestBody: *version
+      responses:
+        "200": *data
+        default: *error
+  /notifications:
+    get:
+      operationId: listPatientNotifications
+      summary: List own visit updates and upcoming reminders without clinical message content
+      security: *session
+      responses:
+        "200":
+          description: The patient's latest notices and current unread count.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: array, items: { $ref: "#/components/schemas/Notification" } }
+                  meta:
+                    type: object
+                    required: [unreadCount]
+                    properties:
+                      unreadCount: { type: integer, minimum: 0 }
+        default: *error
+  /notifications/{id}/read:
+    parameters: *id
+    post:
+      operationId: markNotificationRead
+      summary: Mark an own notification as read
+      security: *session
+      responses:
+        "200": *data
+        default: *error
   /patients:
     get:
       operationId: searchPatients
@@ -1429,6 +1469,18 @@ components:
             properties:
               code: { type: string }
   schemas:
+    Notification:
+      type: object
+      required: [id, kind, resourceId, createdAt, scheduledAt, readAt]
+      properties:
+        id: { type: string }
+        kind:
+          type: string
+          enum: [appointment.confirmed, appointment.reminder, appointment.rescheduled, appointment.cancelled, appointment.no_show, summary.released, prescription.released]
+        resourceId: { type: string }
+        createdAt: { type: string, format: date-time }
+        scheduledAt: { type: [string, "null"], format: date-time }
+        readAt: { type: [string, "null"], format: date-time }
     AuthUser:
       type: object
       required: [id, name, email, emailVerified]
