@@ -56,6 +56,20 @@ doctor. `POST /api/v1/appointments` requires an `Idempotency-Key` and a doctor
 and slot ID; reception also supplies a patient ID. Cancellation and same-doctor
 rescheduling take `expectedVersion` to prevent concurrent overwrites.
 
+## Bootstrap a local administrator
+
+Apply local migrations, then run `pnpm --dir apps/api admin:bootstrap:local`
+with `CLINIC_BOOTSTRAP_EMAIL`, `CLINIC_BOOTSTRAP_NAME`, and
+`CLINIC_BOOTSTRAP_PASSWORD` in the process environment. This command writes
+only to local D1 and refuses to create a second bootstrap administrator.
+Sign in, enroll an authenticator, then use `/api/v1/admin/accounts` to
+provision staff or link a patient account to a record after staff verify identity.
+Public signup is disabled; the API does not infer identity from a shared phone.
+
+The audit API returns action and resource metadata, not passwords, drafts or
+clinical notes. Backup status reports `not_configured` until a verified backup
+integration exists. Published website pages use a separate snapshot from drafts.
+
 ## Verify changes
 
 Run `pnpm typecheck`, `pnpm test`, and `pnpm build` from the repository root.

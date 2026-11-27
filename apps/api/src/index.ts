@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
+import { admin, publicPages } from "./admin";
 import { appointments, availability } from "./appointments";
 import { billing } from "./billing";
 import { clinical } from "./clinical";
@@ -27,10 +28,12 @@ app.use("/api/*", bodyLimit({
 }));
 app.route("/api/v1/public", publicCatalog);
 app.route("/api/v1/public", availability);
+app.route("/api/v1/public", publicPages);
 app.route("/api/v1", reception);
 app.route("/api/v1", clinical);
 app.route("/api/v1", prescriptions);
 app.route("/api/v1", billing);
+app.route("/api/v1/admin", admin);
 app.route("/api/v1/appointments", appointments);
 app.on(["GET", "POST"], "/api/auth/*", handleAuth);
 app.get("/api/v1/me", requireActor, (c) => c.json({ data: c.get("actor") }));
