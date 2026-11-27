@@ -7,6 +7,7 @@ export function authMailConfigured(env: MailBindings) {
 export async function sendAuthMail(env: MailBindings, to: string, subject: string, link: URL) {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
+    signal: AbortSignal.timeout(10_000),
     headers: { Authorization: `Bearer ${env.AUTH_EMAIL_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       from: env.AUTH_EMAIL_FROM,

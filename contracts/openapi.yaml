@@ -796,6 +796,8 @@ paths:
     get:
       operationId: verifyPatientEmail
       summary: Verify an email token and provision a new patient record
+      description: Open the email link in a browser signed in to the same unverified account.
+      security: *session
       parameters:
         - { name: token, in: query, required: true, schema: { type: string } }
       responses:

@@ -69,6 +69,9 @@ Self-registration creates a new record after email verification. It never
 matches by name, email or phone to an existing clinic chart. Existing patients
 should ask the clinic to provision their linked account. Unverified staff and
 administratively provisioned accounts require staff-assisted recovery.
+New patients must sign in with the credentials they registered before opening
+the verification link in the same browser. Until they verify, their session
+cannot access clinic records.
 
 The audit API returns action and resource metadata, not passwords, drafts or
 clinical notes. Backup status reports `not_configured` until a verified backup

@@ -30,8 +30,11 @@ it("verifies a new patient without linking existing records and recovers the acc
   const pre = cookies(await call("sign-in/email", { email, password }));
   expect((await request("/api/v1/me", { cookie: pre })).status).toBe(403);
   const verification = new URL(messages[0].text.split("\n")[2]);
-  expect((await request(verification.pathname + verification.search)).status).toBe(200);
-  expect((await request(verification.pathname + verification.search)).status).toBe(200);
+  const verificationPath = verification.pathname + verification.search;
+  expect((await request(verificationPath)).status).toBe(401);
+  expect((await request("/api/v1/me", { cookie: pre })).status).toBe(403);
+  expect((await request(verificationPath, { cookie: pre })).status).toBe(200);
+  expect((await request(verificationPath, { cookie: pre })).status).toBe(200);
   expect(await (await request("/api/v1/me", { cookie: pre })).json()).toMatchObject({
     data: { role: "patient", patientId: expect.any(String), doctorId: null },
   });

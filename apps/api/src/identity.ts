@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import type { Context, MiddlewareHandler } from "hono";
 import { authMailConfigured, sendAuthMail } from "./auth-mail";
@@ -58,6 +59,17 @@ export function getAuth(env: ApiEnv["Bindings"]) {
           console.error({ event: "auth.email_verification.delivery_failed" });
         });
       },
+      beforeEmailVerification: async (user, request) => {
+        // Require both control of the inbox and the credentials used at registration.
+        // Otherwise an unsolicited signup link could activate an attacker-chosen password.
+        const session = request && await readAuthSession(env, request.headers);
+        if (!session || session.user.id !== user.id) {
+          throw new APIError("UNAUTHORIZED", {
+            code: "VERIFICATION_SESSION_REQUIRED",
+            message: "Sign in with the account you registered, then reopen the verification link.",
+          });
+        }
+      },
       afterEmailVerification: (user) => provisionVerifiedPatient(env.DB, user.id),
     } : undefined,
     advanced: { useSecureCookies: !local, ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] } },
@@ -77,6 +89,10 @@ export function getAuth(env: ApiEnv["Bindings"]) {
     },
     plugins: [twoFactor({ issuer: "Mardan Eye Clinic" })],
   });
+}
+
+async function readAuthSession(env: ApiEnv["Bindings"], headers: Headers): Promise<{ user: { id: string } } | null> {
+  return getAuth(env).api.getSession({ headers });
 }
 
 export function apiError(c: Context<ApiEnv>, status: 400 | 401 | 403 | 404 | 409 | 422 | 503, code: string, message: string) {
