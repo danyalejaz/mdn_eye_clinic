@@ -1,4 +1,5 @@
 export const portalUrl = import.meta.env.PUBLIC_PORTAL_URL ?? "http://127.0.0.1:5173";
+export const launchMode = import.meta.env.PUBLIC_CLINIC_LAUNCH === "true";
 
 export const faqs: { question: string; answer: string; open?: boolean }[] = [
   {

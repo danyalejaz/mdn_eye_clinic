@@ -3,7 +3,7 @@ import PatientPage from "../layouts/PatientPage.astro";
 import { loadCatalog, formatFee } from "../lib/catalog";
 const { clinic, services } = await loadCatalog();
 ---
-<PatientPage {clinic} label="Services" title="Services and fees" description="See what the clinic offers and check the published fee before arranging your visit. Prices are listed in Pakistani rupees.">
+<PatientPage {clinic} label="Services" title="Services and fees" description={import.meta.env.PUBLIC_CLINIC_LAUNCH === "true" ? "Please contact the clinic for current services and fees." : "See what the clinic offers and check the published fee before arranging your visit. Prices are listed in Pakistani rupees."}>
   <section class="wrap section reading-grid">
     <div>
       <p class="eyebrow">Service directory</p>

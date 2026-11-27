@@ -58,6 +58,13 @@ async function list<T extends { slug: string }>(path: string): Promise<T[]> {
 }
 
 export async function loadCatalog() {
+  if (import.meta.env.PUBLIC_CLINIC_LAUNCH === "true") {
+    return {
+      clinic: { name: "Mardan Eye Clinic", address: "", phone: "0937-867538", hoursSummary: null, timezone: "Asia/Karachi" as const, currency: "PKR" as const },
+      doctors: [] as PublicDoctor[],
+      services: [] as PublicService[],
+    };
+  }
   const [clinicBody, doctors, services] = await Promise.all([
     read<{ data: ClinicProfile }>("/api/v1/public/clinic"),
     list<PublicDoctor>("/api/v1/public/doctors"),

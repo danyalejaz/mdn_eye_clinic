@@ -47,7 +47,8 @@ const departments = [...new Map(doctors.map((doctor) => [doctor.departmentSlug, 
 
 <script>
   type Slot = { slotId: string; doctorId: string; startAt: string };
-  const form = document.querySelector<HTMLFormElement>("#availability-form")!;
+  const form = document.querySelector<HTMLFormElement>("#availability-form");
+  if (form) {
   const department = form.querySelector<HTMLSelectElement>('[name="department"]')!;
   const doctor = form.querySelector<HTMLSelectElement>('[name="doctorId"]')!;
   const date = form.querySelector<HTMLInputElement>('[name="date"]')!;
@@ -137,4 +138,5 @@ const departments = [...new Map(doctors.map((doctor) => [doctor.departmentSlug, 
       if (!request.signal.aborted) status.textContent = "Appointment availability is temporarily unavailable. Try again shortly.";
     }
   });
+  }
 </script>

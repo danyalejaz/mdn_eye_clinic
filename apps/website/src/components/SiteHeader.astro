@@ -1,5 +1,6 @@
 ---
 import Mark from "./Mark.astro";
+import { launchMode } from "../data/clinic";
 
 interface Props {
   portalUrl: string;
@@ -19,7 +20,7 @@ const links = [
   <div class="wrap header-row">
     <a href="/" class="brand"><Mark /><span>{clinicName}<small>Eye care in Mardan</small></span></a>
     <div class="header-actions">
-      <a href={`${portalUrl}/sign-in`} class="portal-link">My appointments <span aria-hidden="true">↗</span></a>
+      {!launchMode && <a href={`${portalUrl}/sign-in`} class="portal-link">My appointments <span aria-hidden="true">↗</span></a>}
       <a href="/appointments/" class="button primary">Book a visit</a>
       <details class="mobile-nav">
         <summary>
@@ -31,7 +32,7 @@ const links = [
         <nav aria-label="Mobile navigation">
           {links.map(({ href, label }) => <a {href} aria-current={Astro.url.pathname === href ? "page" : undefined}>{label}</a>)}
           <a href="/appointments/">Book a visit</a>
-          <a href={`${portalUrl}/sign-in`}>My appointments <span aria-hidden="true">↗</span></a>
+          {!launchMode && <a href={`${portalUrl}/sign-in`}>My appointments <span aria-hidden="true">↗</span></a>}
         </nav>
       </details>
     </div>
