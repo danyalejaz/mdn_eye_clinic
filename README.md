@@ -16,8 +16,27 @@ pnpm dev
 curl -i http://localhost:8787/api/v1/health
 ```
 
-The health endpoint reports Worker liveness only. The API currently has no
-database or other service bindings.
+The health endpoint reports Worker liveness only.
+
+## Public clinic catalog
+
+Apply the schema to local D1 and optionally load fictional sample records:
+
+```sh
+pnpm --dir apps/api db:migrate:local
+pnpm --dir apps/api db:seed:local
+```
+
+The read-only catalog provides `/clinic`, `/services`, `/doctors`, and
+`/doctors/{slug}` under the `/api/v1/public` prefix. Lists return
+published rows with a department filter and cursor pagination. The doctor list
+also accepts `q` for name or specialty search. Store catalog slugs as lowercase
+alphanumeric segments separated by hyphens. Use the same filters when
+following `meta.nextCursor`.
+
+The checked-in D1 ID is for local emulation. Production requires an
+environment-specific D1 binding and approved catalog content; never apply the
+fictional seed remotely.
 
 ## Verify changes
 

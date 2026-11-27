@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "wrangler dev --local",
     "build": "wrangler deploy --dry-run --outdir dist",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "wrangler types && tsc --noEmit",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:seed:local": "wrangler d1 execute DB --local --file test/fixtures/public-catalog.sql",
     "test": "vitest run"
   },
   "dependencies": {

@@ -6,6 +6,15 @@
   "workers_dev": false,
   "preview_urls": false,
   "send_metrics": false,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mdn-eye-clinic-local",
+      // Local emulation only. Replace with an approved environment's database before deploying.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "../../packages/database/migrations"
+    }
+  ],
   "observability": {
     "enabled": true,
     "logs": {

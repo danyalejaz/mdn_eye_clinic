@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { publicCatalog } from "./public-catalog";
 
 const app = new Hono<{ Variables: { requestId: string } }>();
 
@@ -12,6 +13,7 @@ app.use("*", async (c, next) => {
 });
 
 app.get("/api/v1/health", (c) => c.json({ data: { status: "ok" } }));
+app.route("/api/v1/public", publicCatalog);
 
 app.notFound((c) =>
   c.json(
