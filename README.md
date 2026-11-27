@@ -111,6 +111,9 @@ newPassword}` to `POST /api/auth/reset-password`. The fragment is not sent to
 the page server. Tokens expire after 30 minutes, and reset revokes existing
 sessions. The reset screen still needs to be connected by the frontend owner.
 
+See [backend operations](docs/backend-operations.md) for deployment and the
+encrypted backup and restore drill.
+
 ## Verify changes
 
 Run `pnpm typecheck`, `pnpm test`, and `pnpm build` from the repository root.
