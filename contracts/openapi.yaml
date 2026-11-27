@@ -1,0 +1,68 @@
+openapi: 3.1.0
+info:
+  title: Mardan Eye Clinic API
+  version: 0.1.0
+  description: Backend API contract for the clinic platform.
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Check Worker liveness
+      description: Reports whether the Worker can handle requests. It does not probe databases or external services.
+      security: []
+      responses:
+        "200":
+          description: The API Worker is responding.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [status]
+                    properties:
+                      status:
+                        type: string
+                        const: ok
+              example:
+                data:
+                  status: ok
+        "500":
+          description: The Worker could not handle the request.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+components:
+  headers:
+    RequestId:
+      description: Server-generated correlation ID for this request.
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    ApiError:
+      type: object
+      required: [error, requestId]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+        requestId:
+          type: string
+          format: uuid
