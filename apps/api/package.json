@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "better-auth": "1.7.28",
-    "hono": "4.13.23"
+    "hono": "4.13.23",
+    "pdf-lib": "1.17.1"
   },
   "devDependencies": {
     "@types/node": "24.19.4",
